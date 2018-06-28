@@ -1,0 +1,51 @@
+"/Users/deep/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/173.4301.33/CLion.app/Contents/bin/cmake/bin/cmake" -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /Users/deep/Development/wio/cosa-fix
+-- Setting module path with Cosa.cmake
+-- Including Unix paths
+-- Including Darwin paths
+-- `cosa`          location: /usr/local/Cellar/wio/0.3.1/toolchain/cosa
+-- `arduino-cmake` location: /usr/local/Cellar/wio/0.3.1/toolchain/arduino-cmake/cmake
+-- #===========================================================================#
+-- Determining `cosa` version
+-- Found package file: /usr/local/Cellar/wio/0.3.1/toolchain/cosa/package_cosa_index.json
+-- Identified `cosa` version: 1.2.0
+-- #===========================================================================#
+-- Obtaining hardware information from /usr/local/Cellar/wio/0.3.1/toolchain/cosa
+-- Founds paths
+-- Cores:       /usr/local/Cellar/wio/0.3.1/toolchain/cosa/cores
+-- Variants:    /usr/local/Cellar/wio/0.3.1/toolchain/cosa/variants/arduino
+-- Bootloaders: /usr/local/Cellar/wio/0.3.1/toolchain/cosa/bootloaders
+-- Boards:      /usr/local/Cellar/wio/0.3.1/toolchain/cosa/boards.txt
+-- Parsed `boards.txt` (e.g. diecimila, duemilanove, leonardo)
+-- Reading variants from directory
+-- Found and cached 17 variants
+-- Reading cores from directory
+-- Found and cached 1 cores
+-- #===========================================================================#
+-- Found paths and programs
+-- avrdude:      /usr/local/bin/avrdude
+-- avr-size:     /usr/local/bin/avr-size
+-- avr-objcopy:  /usr/local/bin/avr-objcopy
+-- Examples:     /usr/local/Cellar/wio/0.3.1/toolchain/cosa/examples
+-- Libraries:    /usr/local/Cellar/wio/0.3.1/toolchain/cosa/libraries
+-- avrdude.conf: /usr/local/Cellar/wio/0.3.1/toolchain/cosa/build/avrdude.conf
+-- Cosa.h:       /usr/local/Cellar/wio/0.3.1/toolchain/cosa/cores/cosa/Cosa.h
+-- Arduino.h:    /usr/local/Cellar/wio/0.3.1/toolchain/cosa/cores/cosa/Arduino.h
+-- #===========================================================================#
+-- Template: /usr/local/Cellar/wio/0.3.1/toolchain/arduino-cmake/cmake/Platform/Extras/CalculateFirmwareSize.cmake
+-- Cached:   /Users/deep/Development/wio/cosa-fix/cmake-build-debug/CMakeFiles/FirmwareSize.cmake
+-- #===========================================================================#
+CMake Deprecation Warning at CMakeLists.txt:27 (cmake_policy):
+  The OLD behavior for policy CMP0023 will be removed from a future version
+  of CMake.
+
+  The cmake-policies(7) manual explains that the OLD behaviors of all
+  policies are deprecated and that a policy should be set to OLD only under
+  specific short-term circumstances.  Projects should be ported to the NEW
+  behavior and not rely on setting a policy to OLD.
+
+
+-- Generating slave
+-- Board.h: /usr/local/Cellar/wio/0.3.1/toolchain/cosa/variants/arduino/uno/Board.h
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/deep/Development/wio/cosa-fix/cmake-build-debug
