@@ -25,11 +25,14 @@
 
 #include "Cosa/Memory.h"
 #include "Cosa/InputPin.hh"
+#include "Cosa/Clock.hh"
 #include "Cosa/RTC.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/IOBuffer.hh"
 #include "Cosa/Trace.hh"
 #include "Cosa/IOStream/Driver/UART.hh"
+
+RTC::Clock clock;
 
 #if defined(WICKEDDEVICE_WILDFIRE)
 CC3000 wifi(Board::D21, Board::EXT2, Board::D23);
@@ -191,7 +194,7 @@ void loop()
     page << PSTR("Request: ") << ++requests << BR;
     page << PSTR("Send Errors: ") << errs << BR;
     page << PSTR("Close Errors: ") << closerrs << BR;
-    page << PSTR("Time: ") << RTC::seconds() << BR;
+    page << PSTR("Time: ") << clock.time() << BR;
     page << (str_P) footer;
     res = wifi.send(client, obuf, obuf.available());
     if (res != obuf.available()) goto error;

@@ -27,12 +27,21 @@
 #include "Cosa/Serial.hh"
 #include "Cosa/IOBuffer.hh"
 
-// Default Soft::UART_BUFFER_MAX
-#ifndef COSA_SOFT_UART_BUFFER_MAX
+// Default receiver buffer size
+#ifndef COSA_SOFT_UART_RX_BUFFER_MAX
 # if defined(BOARD_ATTINY)
-#   define COSA_SOFT_UART_BUFFER_MAX 16
+#   define COSA_SOFT_UART_RX_BUFFER_MAX 16
 # else
-#   define COSA_SOFT_UART_BUFFER_MAX 32
+#   define COSA_SOFT_UART_RX_BUFFER_MAX 32
+# endif
+#endif
+
+// Default transmitter buffer size
+#ifndef COSA_SOFT_UART_TX_BUFFER_MAX
+# if defined(BOARD_ATTINY)
+#   define COSA_SOFT_UART_TX_BUFFER_MAX 16
+# else
+#   define COSA_SOFT_UART_TX_BUFFER_MAX 32
 # endif
 #endif
 
@@ -52,7 +61,7 @@ public:
   UAT(Board::DigitalPin tx);
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Write character to serial port output buffer. Returns character
    * if successful otherwise on error or buffer full returns EOF(-1),
    * @param[in] c character to write.
@@ -61,7 +70,7 @@ public:
   virtual int putchar(char c);
 
   /**
-   * @override Serial
+   * @override{Serial}
    * Start Soft UART device driver (transmitter only).
    * @param[in] baudrate serial bitrate (default 9600).
    * @param[in] format serial frame format (default DATA8, NO PARITY, STOP2).
@@ -85,7 +94,8 @@ protected:
 class UART : public UAT {
 public:
   /** Default buffer size. */
-  static const uint8_t BUFFER_MAX = COSA_SOFT_UART_BUFFER_MAX;
+  static const uint8_t RX_BUFFER_MAX = COSA_SOFT_UART_RX_BUFFER_MAX;
+  static const uint8_t TX_BUFFER_MAX = COSA_SOFT_UART_TX_BUFFER_MAX;
 
   /**
    * Construct Soft UART with transmitter on given output pin and
@@ -99,7 +109,7 @@ public:
   UART(Board::DigitalPin tx, Board::InterruptPin rx, IOStream::Device* ibuf);
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Number of bytes available in input buffer.
    * @return bytes.
    */
@@ -109,7 +119,7 @@ public:
   }
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Peek next character from serial port input buffer.
    * Returns character if successful otherwise on error or buffer empty
    * returns EOF(-1),
@@ -121,7 +131,7 @@ public:
   }
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Peek for given character from serial port input buffer.
    * @param[in] c character to peek for.
    * @return available or EOF(-1).
@@ -132,7 +142,7 @@ public:
   }
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Read character from serial port input buffer.
    * Returns character if successful otherwise on error or buffer empty
    * returns EOF(-1),
@@ -144,7 +154,7 @@ public:
   }
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Empty internal device buffers.
    */
   virtual void empty()
@@ -153,7 +163,7 @@ public:
   }
 
   /**
-   * @override Serial
+   * @override{Serial}
    * Start Soft UART device driver.
    * @param[in] baudrate serial bitrate (default 9600).
    * @param[in] format serial frame format (default DATA8, NO PARITY, STOP2).
@@ -163,7 +173,7 @@ public:
 		     uint8_t format = DEFAULT_FORMAT);
 
   /**
-   * @override Serial
+   * @override{Serial}
    * Stop Soft UART device driver.
    * @return true(1) if successful otherwise false(0)
    */

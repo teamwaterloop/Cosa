@@ -26,6 +26,7 @@
 #include <Shell.h>
 
 #include "Cosa/RTC.hh"
+#include "Cosa/Clock.hh"
 #include "Cosa/OutputPin.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/IOStream/Driver/UART.hh"
@@ -44,6 +45,7 @@ S25FL127S flash;
 W25X40CL flash;
 #endif
 
+RTC::Clock clock;
 IOStream ios(&uart);
 
 void setup()

@@ -19,55 +19,62 @@
  */
 
 #include "Cosa/RTC.hh"
-#include "Cosa/Power.hh"
-
-// Real-Time Clock configuration
-#define COUNT 255
-#define PRESCALE 64
-#define US_PER_TIMER_CYCLE (PRESCALE / I_CPU)
-#define US_PER_TICK ((COUNT + 1) * US_PER_TIMER_CYCLE)
-#define TICKS_PER_SEC (1000000L / US_PER_TICK)
-#define US_PER_SEC_ERROR (1000000L - (TICKS_PER_SEC * US_PER_TICK))
+#include "Cosa/RTC_Config.hh"
 
 // Initiated state
 bool RTC::s_initiated = false;
 
-// Timer ticks counter
-volatile uint32_t RTC::s_uticks = 0UL;
-volatile uint16_t RTC::s_ticks = 0;
-volatile clock_t RTC::s_sec = 0L;
-volatile int16_t RTC::s_uerror = 0;
+// Micro-seconds counter (fraction in timer register)
+uint32_t RTC::s_micros = 0UL;
 
-// Timer interrupt extension
-RTC::InterruptHandler RTC::s_handler = NULL;
-void* RTC::s_env = NULL;
+// Milli-seconds counter
+uint32_t RTC::s_millis = 0UL;
+
+// Job scheduler
+RTC::Scheduler* RTC::s_scheduler = NULL;
+
+// RTC alarm clock
+RTC::Clock* RTC::s_clock = NULL;
+
+// Timer job
+Job* RTC::s_job = NULL;
 
 bool
 RTC::begin()
 {
+  // Should not be already initiated
   if (UNLIKELY(s_initiated)) return (false);
+
   synchronized {
     // Set prescaling to 64
     TCCR0B = (_BV(CS01) | _BV(CS00));
 
-    // And enable interrupt on overflow
-    TIMSK0 = _BV(TOIE0);
+    // Clear Timer on Compare Match with given Count. Enable interrupt
+    TCCR0A = _BV(WGM01);
+    OCR0A = TIMER_MAX;
+    TIMSK0 = _BV(OCIE0A);
 
     // Reset the counter and clear interrupts
     TCNT0 = 0;
     TIFR0 = 0;
   }
-  s_initiated = true;
+
+  // Install delay function and mark as initiated
   ::delay = RTC::delay;
+  s_initiated = true;
   return (true);
 }
 
 bool
 RTC::end()
 {
-  // Disable the timer interrupts
+  // Check if initiated
+  if (UNLIKELY(!s_initiated)) return (false);
+
+  // Disable the timer interrupts and mark as not initiated
   synchronized TIMSK0 = 0;
   s_initiated = false;
+
   return (true);
 }
 
@@ -89,15 +96,30 @@ RTC::micros()
   uint32_t res;
   uint8_t cnt;
 
-  // Read tick count and hardware counter. Adjust if pending interrupt
+  // Read micro-seconds and hardware counter. Adjust if pending interrupt
   synchronized {
-    res = s_uticks;
+    res = s_micros;
     cnt = TCNT0;
-    if ((TIFR0 & _BV(TOV0)) && cnt < COUNT) res += US_PER_TICK;
+    if ((TIFR0 & _BV(OCF0A)) && (cnt < TIMER_MAX)) res += US_PER_TICK;
   }
 
   // Convert ticks to micro-seconds
   res += ((uint32_t) cnt) * US_PER_TIMER_CYCLE;
+  return (res);
+}
+
+uint32_t
+RTC::millis()
+{
+  uint32_t res;
+  uint8_t cnt;
+
+  // Read milli-seconds. Adjust if pending interrupt
+  synchronized {
+    res = s_millis;
+    cnt = TCNT0;
+    if ((TIFR0 & _BV(OCF0A)) && (cnt < TIMER_MAX)) res += MS_PER_TICK;
+  }
   return (res);
 }
 
@@ -111,36 +133,36 @@ RTC::delay(uint32_t ms)
 int
 RTC::await(volatile bool &condvar, uint32_t ms)
 {
-  int res = 0;
-  if (ms != 0) {
-    uint32_t start = millis();
-    while (!condvar && since(start) < ms) yield();
-    if (!condvar) res = ETIME;
-  }
-  else {
-    while (!condvar) yield();
-  }
-  return (res);
+  uint32_t start = RTC::millis();
+  while (!condvar && ((ms == 0) || (RTC::since(start) < ms))) yield();
+  return (!condvar ? ETIME : 0);
 }
 
-ISR(TIMER0_OVF_vect)
+ISR(TIMER0_COMPA_vect)
 {
-  // Increment most significant part of micro second counter
-  RTC::s_uticks += US_PER_TICK;
+  // Increment micro-seconds counter (fraction in timer)
+  RTC::s_micros += US_PER_TICK;
 
-  // Skip tick if accumulated error is greater than tick time
-  if (RTC::s_uerror >= US_PER_TICK)
-    RTC::s_uerror -= US_PER_TICK;
-  else if (RTC::s_ticks == TICKS_PER_SEC-1) {
-    RTC::s_ticks = 0;
-    RTC::s_sec++;
-    RTC::s_uerror += US_PER_SEC_ERROR;
-  } else
-    RTC::s_ticks++;
+  // Increment milli-seconds counter
+  RTC::s_millis += MS_PER_TICK;
 
-  // Check for extension of the interrupt handler
-  RTC::InterruptHandler fn = RTC::s_handler;
-  if (UNLIKELY(fn == NULL)) return;
-  void* env = RTC::s_env;
-  fn(env);
+  // Dispatch expired jobs
+  if ((RTC::s_scheduler != NULL) && (RTC::s_job == NULL))
+    RTC::s_scheduler->dispatch();
+
+  // Clock tick and dispatch expired jobs
+  if (RTC::s_clock != NULL)
+    RTC::s_clock->tick(MS_PER_TICK);
 }
+
+ISR(TIMER0_COMPB_vect)
+{
+  // Disable the timer match
+  TIMSK0 &= ~_BV(OCIE0B);
+
+  // Dispatch expired jobs
+  RTC::s_job = NULL;
+  if (RTC::s_scheduler != NULL)
+    RTC::s_scheduler->dispatch();
+}
+

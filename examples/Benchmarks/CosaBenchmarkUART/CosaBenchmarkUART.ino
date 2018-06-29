@@ -27,20 +27,26 @@
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Memory.h"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOBuffer.hh"
 #include "Cosa/IOStream/Driver/UART.hh"
 
-static IOBuffer<128> ibuf;
-static IOBuffer<1024> obuf;
-
-// Create UART and bind to the cout IOStream
-#if !defined(USBCON)
-UART uart(0, &ibuf, &obuf);
-#endif
+// Bits transmitted; 1 start bit, 8 data bits, 2 stop bits
+static const uint32_t BITS = 11;
 
 void setup()
 {
-  uart.begin(57600);
+  // Put baudrate setting as first line
+  uart.begin(2000000);
+  // uart.begin(1000000);
+  // uart.begin(500000);
+  // uart.begin(250000);
+  // uart.begin(230400);
+  // uart.begin(115200);
+  // uart.begin(57600);
+  // uart.begin(38400);
+  // uart.begin(28800);
+  // uart.begin(19200);
+  // uart.begin(14400);
+  // uart.begin(9600);
   trace.begin(&uart, PSTR("CosaBenchmarkUART: started"));
   TRACE(free_memory());
   Watchdog::begin();
@@ -59,10 +65,12 @@ void loop()
   MEASURE("two character string:", 1) trace << PSTR("10") << endl;
   MEASURE("integer:", 1) trace << 10 << endl;
   MEASURE("long integer:", 1) trace << 10L << endl;
+  MEASURE("floating point:", 1) trace << 10.0 << endl;
   MEASURE("three characters:", 1) trace << '1' << '0' << '0' << endl;
   MEASURE("three character string:", 1) trace << PSTR("100") << endl;
   MEASURE("integer:", 1) trace << 100 << endl;
   MEASURE("long integer:", 1) trace << 100L << endl;
+  MEASURE("floating point:", 1) trace << 100.0 << endl;
 
   // Measure time to print max integer << endl; 8, 16 and 32 bit.
   MEASURE("max int8_t:", 1) trace << (int8_t) 0x7f << endl;
@@ -84,21 +92,29 @@ void loop()
     trace.println();
   }
 
-  // Measure time to print all characters
-  MEASURE("output(4096 characters):", 1) {
-    for (uint8_t i = 0; i < 64; i++) {
-      for (char c = ' '; c < ' '+64; c++)
-	trace << c;
-      trace << endl;
-    }
-    trace.flush();
-  }
-
   // Measure time to print some special characters
   MEASURE("newline character:", 1) trace << '\n';
   MEASURE("tab:", 1) trace << '\t' << endl;
   MEASURE("newline string(1):", 1) trace << (char*) "\n";
   MEASURE("newline string(2):", 1) trace << (char*) "\n\n";
+
+  // Measure time to print all characters
+  delay(10);
+  uint16_t n = 0;
+  MEASURE("performance:", 1) {
+    for (uint8_t i = 0; i < 10; i++) {
+      for (uint8_t c = ' '; c < ' '+95; c++, n++)
+	trace << (char) c;
+      trace << endl;
+      n += 2;
+    }
+    trace.flush();
+  }
+  delay(10);
+  uint32_t Kbps = (BITS * n * 1000UL) / trace.measure;
+  trace << PSTR("effective baudrate (") << n << PSTR(" characters):")
+	<< Kbps << PSTR(" Kbps")
+	<< endl;
 
   ASSERT(true == false);
 }

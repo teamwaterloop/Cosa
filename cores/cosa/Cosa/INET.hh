@@ -75,6 +75,13 @@ public:
     uint8_t mac[MAC_MAX];	//!< Hardware address.
     uint8_t ip[IP_MAX];		//!< Network address.
     uint16_t port;		//!< Service port.
+
+    addr_t() :
+      port(0)
+    {
+      memset(mac, 0, MAC_MAX);
+      memset(ip, 0, IP_MAX);
+    }
   };
 
   /**
@@ -203,7 +210,7 @@ public:
     void get_client(INET::addr_t& addr);
 
     /**
-     * @override INET::Server
+     * @override{INET::Server}
      * Start server with given socket. Initiates socket for incoming
      * connection-oriented requests (TCP/listen). Returns true if
      * successful otherwise false.
@@ -213,7 +220,7 @@ public:
     virtual bool begin(Socket* sock);
 
     /**
-     * @override INET::Server
+     * @override{INET::Server}
      * Run server; service incoming client connect requests or data.
      * Wait for at most given time period. Zero time period will give
      * blocking behavior. Returns zero if successful or negative error
@@ -224,7 +231,7 @@ public:
     virtual int run(uint32_t ms = 0L);
 
     /**
-     * @override INET::Server
+     * @override{INET::Server}
      * Stop server and close socket. Returns true if successful
      * otherwise false.
      * @return bool.
@@ -232,7 +239,7 @@ public:
     virtual bool end();
 
     /**
-     * @override INET::Server
+     * @override{INET::Server}
      * Application extension; Called when a client connect has been
      * accepted. Return true if application accepts otherwise false.
      * @param[in] ios iostream for response.
@@ -245,7 +252,7 @@ public:
     }
 
     /**
-     * @override INET::Server
+     * @override{INET::Server}
      * Application extension; Called when a client connect has
      * been accepted.
      * @param[in] ios iostream for response.
@@ -256,7 +263,7 @@ public:
     }
 
     /**
-     * @override INET::Server
+     * @override{INET::Server}
      * Application extension; Should implement the response to the
      * incoming request. Called with there is available data.
      * @param[in] ios iostream for request and response.
@@ -264,7 +271,7 @@ public:
     virtual void on_request(IOStream& ios) = 0;
 
     /**
-     * @override INET::Server
+     * @override{INET::Server}
      * Application extension; Called when a client disconnects.
      */
     virtual void on_disconnect() {}

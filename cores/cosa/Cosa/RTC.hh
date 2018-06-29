@@ -21,36 +21,33 @@
 #ifndef COSA_RTC_HH
 #define COSA_RTC_HH
 
-#include "Cosa/Time.hh"
+#include "Cosa/Types.h"
+#include "Cosa/Job.hh"
+#include "Cosa/Clock.hh"
 
 /**
- * Real-time clock; AVR Timer0 for micro/milli-second timing.
+ * Real-time clock with micro/milli/seconds timing based on hardware
+ * timer.
  *
  * @section Limitations
- * Cannot be used together with other classes that use Timer#0.
+ * Cannot be used together with other classes that use AVR/Timer#0.
  */
 class RTC {
 public:
   /**
-   * RTC interrupt handler function prototype.
-   * @param[in] env interrupt handler environment.
-   */
-  typedef void (*InterruptHandler)(void* env);
-
-  /**
-   * Start the Real-Time Clock.
+   * Start the real-time clock.
    * @return bool true(1) if successful otherwise false(0).
    */
   static bool begin();
 
   /**
-   * Stop the Real-Time Clock.
+   * Stop the real-time clock.
    * @return bool true(1) if successful otherwise false(0).
    */
   static bool end();
 
   /**
-   * Get number of micro-seconds per tick.
+   * Get number of micro-seconds per real-time clock tick.
    * @return micro-seconds.
    */
   static uint16_t us_per_tick();
@@ -60,37 +57,6 @@ public:
    * @return micro-seconds.
    */
   static uint16_t us_per_timer_cycle();
-
-  /**
-   * Set clock (seconds) to real-time (for instance seconds from a
-   * given date; epoch 1900-01-01 00:00 or 1970-01-01 00:00).
-   * Please note that the seconds level clock is not not
-   * based/calculated from the micro-second level clock. This clock is
-   * always from system power up.
-   * @param[in] sec.
-   * @note atomic
-   */
-  static void time(clock_t sec)
-    __attribute__((always_inline))
-  {
-    synchronized {
-      s_sec = sec;
-      s_ticks = 0;
-      s_uerror = 0;
-    }
-  }
-
-  /**
-   * Returns number of milli-seconds from given start.
-   * @param[in] start
-   * @return (millis() - start)
-   */
-  static uint32_t since(uint32_t start)
-    __attribute__((always_inline))
-  {
-    uint32_t now = millis();
-    return (now - start);
-  }
 
   /**
    * Return the current clock in micro-seconds.
@@ -105,46 +71,47 @@ public:
    */
   static void micros(uint32_t usec)
   {
-    synchronized s_uticks = usec;
+    synchronized {
+      s_micros = usec;
+      s_millis = usec / 1000L;
+    }
   }
-
 
   /**
    * Return the current clock in milli-seconds.
    * @return milli-seconds.
    */
-  static uint32_t millis()
-    __attribute__((always_inline))
-  {
-    return (micros() / 1000);
-  }
+  static uint32_t millis();
 
   /**
-   * Return the current clock in seconds.
-   * @return seconds.
+   * Set the current clock in milli-seconds.
+   * @param[in] usec.
    * @note atomic
    */
-  static uint32_t seconds()
-    __attribute__((always_inline))
+  static void millis(uint32_t ms)
   {
-    uint32_t res;
-    synchronized res = s_sec;
-    return (res);
+    synchronized {
+      s_micros = ms * 1000L;
+      s_millis = ms;
+    }
   }
 
   /**
-   * Return the current clock in seconds.
-   * @return seconds.
-   * @note atomic
+   * Returns number of milli-seconds from given start time in
+   * milli-seconds.
+   * @param[in] start
+   * @return number of milli-seconds.
    */
-  static clock_t time()
+  static uint32_t since(uint32_t start)
     __attribute__((always_inline))
   {
-    return (seconds());
+    uint32_t now = millis();
+    return (now - start);
   }
 
   /**
-   * Delay using the real-time clock.
+   * Delay using the real-time clock. Installed as the global delay()
+   * function when the real-time clock is started with begin().
    * @param[in] ms sleep period in milli-seconds.
    */
   static void delay(uint32_t ms);
@@ -161,28 +128,97 @@ public:
   static int await(volatile bool &condvar, uint32_t ms);
 
   /**
-   * Set RTC overflow interrupt handler. Allow extension of the interrupt
-   * handler for Timers.
-   * @param[in] fn interrupt handler.
-   * @param[in] env environment pointer.
-   * @note atomic
+   * RTC Scheduler for jobs with a delay of 50 us or longer.
    */
-  static void set(InterruptHandler fn, void* env = NULL)
-  {
-    synchronized {
-      s_handler = fn;
-      s_env = env;
+  class Scheduler : public Job::Scheduler {
+  public:
+    /**
+     * Construct and register a RTC Job Scheduler. Should be a
+     * singleton.
+     */
+    Scheduler() : Job::Scheduler()
+    {
+      RTC::s_scheduler = this;
     }
+
+    /**
+     * @override{Job::Scheduler}
+     * Start given job. Returns true(1) if successful otherwise
+     * false(0).
+     * @return bool.
+     */
+    virtual bool start(Job* job);
+
+    /**
+     * @override{Job::Scheduler}
+     * Dispatch expired jobs. Called from RTC ISR.
+     */
+    virtual void dispatch();
+
+    /**
+     * @override{Job::Scheduler}
+     * Return current time in micro-seconds.
+     */
+    virtual uint32_t time();
+  };
+
+  /**
+   * Set the real-time clock job scheduler.
+   * @param[in] scheduler.
+   */
+  static void job(RTC::Scheduler* scheduler)
+  {
+    s_scheduler = scheduler;
+  }
+
+  /**
+   * Get the real-time clock job scheduler.
+   * @return scheduler.
+   */
+  static RTC::Scheduler* scheduler()
+  {
+    return (s_scheduler);
+  }
+
+  /**
+   * RTC Clock for seconds level time base.
+   */
+  class Clock : public ::Clock {
+  public:
+    /**
+     * Construct and register a RTC Clock. Should be a singleton.
+     */
+    Clock() : ::Clock()
+    {
+      RTC::s_clock = this;
+    }
+  };
+
+  /**
+   * Set the wall-clock.
+   * @param[in] clock.
+   */
+  static void wall(Clock* clock)
+  {
+    s_clock = clock;
+  }
+
+  /**
+   * Get the wall-clock.
+   * @return clock.
+   */
+  static Clock* clock()
+  {
+    return (s_clock);
   }
 
 private:
-  static bool s_initiated;
-  static volatile uint32_t s_uticks;
-  static volatile uint16_t s_ticks;
-  static volatile clock_t s_sec;
-  static volatile int16_t s_uerror;
-  static InterruptHandler s_handler;
-  static void* s_env;
+  static bool s_initiated;	     	//!< Initiated flag.
+  static uint32_t s_micros;		//!< Micro-seconds counter.
+  static uint32_t s_millis;		//!< Milli-seconds counter.
+  static Scheduler* s_scheduler;	//!< Job scheduler.
+  static Job* s_job;			//!< Timer job.
+  static Clock* s_clock;		//!< Clock.
 
   /**
    * Do not allow instances. This is a static singleton; name space.
@@ -190,10 +226,11 @@ private:
   RTC() {}
 
   /** Interrupt Service Routine. */
-  friend void TIMER0_OVF_vect(void);
+  friend void TIMER0_COMPA_vect(void);
+  friend void TIMER0_COMPB_vect(void);
 
-  /** Timer access. */
-  friend class Timer;
+  /** Scheduler access. */
+  friend class RTC::Scheduler;
 };
 
 #endif

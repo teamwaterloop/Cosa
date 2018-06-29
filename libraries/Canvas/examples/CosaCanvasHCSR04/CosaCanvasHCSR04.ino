@@ -71,7 +71,7 @@ IOStream cout(&textbox);
 class Ping : public HCSR04 {
 private:
 public:
-  Ping() : HCSR04(Board::D2, Board::D3) {}
+  Ping(Job::Scheduler* scheduler) : HCSR04(scheduler, Board::D2, Board::D3) {}
   virtual void on_change(uint16_t distance);
 };
 
@@ -104,12 +104,16 @@ Ping::on_change(uint16_t distance)
 }
 
 OutputPin ledPin(Board::LED);
-Ping ping;
+Watchdog::Scheduler scheduler;
+Ping ping(&scheduler);
 
 void setup()
 {
-  // Start the watchdog ticks and push time events
-  Watchdog::begin(16, Watchdog::push_timeout_events);
+  // Start the watchdog ticks
+  Watchdog::begin();
+
+  // Attach the range module to read distance every 1/4 second
+  ping.schedule(256);
 
   // Start display and initiate text scale and port. Draw splash screen
   tft.begin();
@@ -117,15 +121,10 @@ void setup()
   textbox.set_text_port(0, 0, tft.WIDTH, tft.HEIGHT);
   textbox.set_text_font(&segment32x50);
   ping.on_change(0);
-
-  // Attach the range module to read distance every 1/4 second
-  ping.periodic(256);
 }
 
 void loop()
 {
   // Wait for events (low power mode) and dispatch
-  Event event;
-  Event::queue.await(&event);
-  event.dispatch();
+  Event::service();
 }

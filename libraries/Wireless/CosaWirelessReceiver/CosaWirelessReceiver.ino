@@ -61,10 +61,14 @@
 VirtualWireCodec codec;
 #define SPEED 4000
 #if defined(BOARD_ATTINY)
-VWI rf(NETWORK, DEVICE, SPEED, Board::D1, Board::D0, &codec);
+VWI::Receiver rx(Board::D1, &codec);
 #else
-VWI rf(NETWORK, DEVICE, SPEED, Board::D7, Board::D8, &codec);
+VWI::Receiver rx(Board::D7, &codec);
 #endif
+VWI rf(NETWORK, DEVICE, SPEED, &rx);
+
+// Wall-clock
+RTC::Clock clock;
 
 void setup()
 {
@@ -159,7 +163,7 @@ void loop()
 
   // Print the message header
   if (count >= 0) {
-    trace << RTC::seconds()
+    trace << clock.time()
 	  << PSTR(":src=") << hex << src
 	  << PSTR(",port=") << hex << port
 	  << PSTR(",dest=")

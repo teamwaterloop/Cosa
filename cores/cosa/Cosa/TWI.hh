@@ -26,6 +26,7 @@
 #include "Cosa/USI/TWI.hh"
 #else
 #include "Cosa/Event.hh"
+#include <avr/power.h>
 
 /**
  * Two wire library. Support for the I2C/TWI bus Master and Slave
@@ -52,8 +53,8 @@ public:
   /** Default Two-Wire Interface clock: 100 KHz. */
   static const uint32_t DEFAULT_FREQ = 100000L;
 
-  /** Max Two-Wire Interface clock: 444.444 KHz @ 16 MHz. */
-  static const uint32_t MAX_FREQ = (F_CPU / (16 + 2*10));
+  /** Max Two-Wire Interface clock: 800 KHz @ 16 MHz. */
+  static const uint32_t MAX_FREQ = (F_CPU / (16 + 2*2));
 
   /**
    * Device drivers are friends and may have callback/event handler
@@ -95,7 +96,7 @@ public:
     }
 
     /**
-     * @override TWI::Driver
+     * @override{TWI::Driver}
      * Service completion callback when a read/write has been
      * completed.
      * @param[in] type event code.
@@ -152,7 +153,7 @@ public:
     void begin();
 
     /**
-     * @override TWI::Driver
+     * @override{TWI::Driver}
      * Service completion callback when a read/write has been
      * completed.
      * @param[in] type event code.
@@ -164,7 +165,7 @@ public:
     }
 
     /**
-     * @override TWI::Slave
+     * @override{TWI::Slave}
      * Service request callback when a write has been completed, i.e.,
      * an argument block as been written. Must be defined by sub-class.
      * Must handle write-read and write-write sequences. The device will
@@ -182,7 +183,7 @@ public:
     static const uint8_t READ_IX = 1;
 
     /**
-     * @override Event::Handler
+     * @override{Event::Handler}
      * Filter Event::WRITE_COMPLETED_TYPE(size) and calls on_request()
      * with given write block as argument. The device is marked as ready
      * when the request has been completed and a possible result block
@@ -342,7 +343,23 @@ public:
   void set_freq(uint32_t hz)
     __attribute__((always_inline))
   {
-    m_freq = (hz < MAX_FREQ) ? (((F_CPU / hz) - 16) / 2) : 10;
+    m_freq = (hz < MAX_FREQ) ? (((F_CPU / hz) - 16) / 2) : 2;
+  }
+
+  /**
+   * Powerup TWI.
+   */
+  void powerup()
+  {
+    power_twi_enable();
+  }
+
+  /**
+   * Powerdown TWI.
+   */
+  void powerdown()
+  {
+    power_twi_disable();
   }
 
 private:
@@ -503,4 +520,3 @@ private:
 */
 extern TWI twi;
 #endif
-

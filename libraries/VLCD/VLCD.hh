@@ -52,7 +52,7 @@ public:
   {}
 
   /**
-   * @override LCD::Device
+   * @override{LCD::Device}
    * Start display for text output. Initiate display and retrieve
    * version and dimension information (MAJOR/MINOR and WIDTH/HEIGHT).
    * Returns true if successful otherwise false.
@@ -61,44 +61,44 @@ public:
   virtual bool begin();
 
   /**
-   * @override LCD::Device
+   * @override{LCD::Device}
    * Stop display and power down. Returns true if successful otherwise
    * false.
    */
   virtual bool end();
 
   /**
-   * @override LCD::Device
+   * @override{LCD::Device}
    * Turn display backlight on.
    */
   virtual void backlight_on();
 
   /**
-   * @override LCD::Device
+   * @override{LCD::Device}
    * Turn display backlight off.
    */
   virtual void backlight_off();
 
   /**
-   * @override LCD::Device
+   * @override{LCD::Device}
    * Turn display on.
    */
   virtual void display_on();
 
   /**
-   * @override LCD::Device
+   * @override{LCD::Device}
    * Turn display off.
    */
   virtual void display_off();
 
   /**
-   * @override LCD::Device
+   * @override{LCD::Device}
    * Clear display and move cursor to home.
    */
   virtual void display_clear();
 
   /**
-   * @override LCD::Device
+   * @override{LCD::Device}
    * Set cursor position to given position.
    * @param[in] x.
    * @param[in] y.
@@ -106,7 +106,7 @@ public:
   virtual void set_cursor(uint8_t x, uint8_t y);
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Write character to display. Handles carriage-return-line-feed, back-
    * space, alert, horizontal tab and form-feed. Returns character or EOF
    * on error.
@@ -115,14 +115,17 @@ public:
    */
   virtual int putchar(char c);
 
+  /** Overloaded virtual member function write. */
+  using IOStream::Device::write;
+
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Write data from buffer with given size to device.
    * @param[in] buf buffer to write.
    * @param[in] size number of bytes to write.
    * @return number of bytes written or EOF(-1).
    */
-  virtual int write(void* buf, size_t size);
+  virtual int write(const void* buf, size_t size);
 
   /**
    * Virtual LCD Slave device
@@ -147,7 +150,7 @@ public:
     }
 
     /**
-     * @override TWI::Slave
+     * @override{TWI::Slave}
      * Slave request handler; parse and dispatch LCD functions.
      * @param[in] buf buffer pointer.
      * @param[in] size of buffer.

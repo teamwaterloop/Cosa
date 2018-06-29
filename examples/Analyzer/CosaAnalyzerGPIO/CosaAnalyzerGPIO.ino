@@ -16,24 +16,46 @@
  * Lesser General Public License for more details.
  *
  * @section Description
- * Logic Analyzer based performance measurement of CosaGPIO. Trigger
- * on rising edge transition on ledPin. Measurements are for Arduino
- * Uno/Nano.
+ * Logic Analyzer based performance measurement of CosaGPIO.
+ * Measurements are for Arduino Uno/Nano (Cosa 1.1.3).
+ *
+ * @section Circuit
+ * Trigger on CHAN0/D13/LED rising.
+ *
+ * +-------+
+ * | CHAN0 |-------------------------------> ledPin(LED/D13)
+ * | CHAN1 |-------------------------------> outPin(D7);
+ * | CHAN2 |-------------------------------> dataPin(D8);
+ * | CHAN3 |-------------------------------> clockPin(D9);
+ * |       |
+ * | GND   |-------------------------------> GND
+ * +-------+
  *
  * This file is part of the Arduino Che Cosa project.
  */
 
 #include "Cosa/GPIO.hh"
 #include "Cosa/Math.hh"
+#include "Cosa/Trace.hh"
+#include "Cosa/IOStream/Driver/UART.hh"
 
-GPIO outPin(Board::D8, GPIO::OUTPUT_MODE);
-GPIO dataPin(Board::D9, GPIO::OUTPUT_MODE);
-GPIO clockPin(Board::D10, GPIO::OUTPUT_MODE);
+GPIO outPin(Board::D7, GPIO::OUTPUT_MODE);
+GPIO dataPin(Board::D8, GPIO::OUTPUT_MODE);
+GPIO clockPin(Board::D9, GPIO::OUTPUT_MODE);
 GPIO ledPin(Board::LED, GPIO::OUTPUT_MODE);
 uint8_t data;
 
 void setup()
 {
+  // Print short info about the logic analyser probe channels
+  uart.begin(9600);
+  trace.begin(&uart, PSTR("CosaAnalyzerGPIO: started"));
+  trace << PSTR("CHAN0 - D13/LED [^]") << endl;
+  trace << PSTR("CHAN1 - D7 (out)") << endl;
+  trace << PSTR("CHAN2 - D8 (data)") << endl;
+  trace << PSTR("CHAN3 - D9 (clock)") << endl;
+  trace.flush();
+
   // Initial data
   data = rand(255);
 

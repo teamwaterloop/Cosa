@@ -168,7 +168,6 @@ TWI::Slave::on_event(uint8_t type, uint16_t value)
 TWI::TWI() :
   m_sda((Board::DigitalPin) Board::SDA, IOPin::INPUT_MODE, true),
   m_scl((Board::DigitalPin) Board::SCL, IOPin::OUTPUT_MODE, true),
-  m_target(0),
   m_state(IDLE),
   m_next(0),
   m_last(0),
@@ -315,7 +314,6 @@ TWI::end()
 
   // Put into idle state
   synchronized {
-    m_target = NULL;
     m_dev = NULL;
     m_busy = false;
   }
@@ -360,5 +358,17 @@ TWI::read(void* buf, size_t size)
   iovec_arg(vp, buf, size);
   iovec_end(vp);
   return (request(READ_OP));
+}
+
+void
+TWI::powerup()
+{
+  power_usi_enable();
+}
+
+void
+TWI::powerdown()
+{
+  power_usi_disable();
 }
 #endif

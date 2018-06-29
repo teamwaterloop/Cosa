@@ -42,6 +42,11 @@
 #include "Cosa.h"
 
 /**
+ * Create an unique symbol for macro from given name and line.
+ */
+#define __UNIQUE(name) __CONCAT(name,__LINE__)
+
+/**
  * Number of bits in a character.
  */
 #define CHARBITS 8
@@ -132,6 +137,11 @@ union univ32_t {
     uint16_t high;
   };
 };
+
+/**
+ * Round integer division.
+ */
+#define ROUND(x,y) (((x) + (y - 1)) / (y))
 
 /**
  * Compiler branch prediction hinting.
@@ -258,7 +268,7 @@ typedef const PROGMEM void_P void_vec_P;
  * Macro for micro-second level delay.
  * @param[in] us micro-seconds.
  */
-#define DELAY(us) _delay_loop_2(((us) * I_CPU) / 4)
+#define DELAY(us) _delay_loop_2((us) * (F_CPU / 4000000L))
 
 /**
  * Delay given number of milli-seconds. This function pointer
@@ -328,6 +338,11 @@ unlock(uint8_t key)
  * Alternative to volatile declaration.
  */
 #define barrier() __asm__ __volatile__("nop" ::: "memory")
+
+/**
+ * No-operation; 1 clock cycle delay.
+ */
+#define nop() __asm__ __volatile__("nop")
 
 /**
  * Buffer structure for scatter/gather.

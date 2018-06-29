@@ -23,7 +23,7 @@
 
 #include "Cosa/Types.h"
 #include "Cosa/InputPin.hh"
-#include "Cosa/Linkage.hh"
+#include "Cosa/Periodic.hh"
 #include "Cosa/Watchdog.hh"
 
 /**
@@ -51,7 +51,7 @@
  * The Button event handler requires the usage of an event dispatch.
  * See Event.hh.
  */
-class Button : public InputPin, private Link {
+class Button : public InputPin, public Periodic {
 public:
   /**
    * Button change detection modes; falling (high to low), rising (low
@@ -66,36 +66,19 @@ public:
   /**
    * Construct a button connected to the given pin and with
    * the given change detection mode.
+   * @param[in] scheduler for periodic job.
    * @param[in] pin number.
    * @param[in] mode change detection mode.
    */
-  Button(Board::DigitalPin pin, Mode mode = ON_CHANGE_MODE) :
+  Button(Job::Scheduler* scheduler, Board::DigitalPin pin, Mode mode = ON_CHANGE_MODE) :
     InputPin(pin, InputPin::PULLUP_MODE),
-    Link(),
+    Periodic(scheduler, SAMPLE_MS),
     MODE(mode),
     m_state(is_set())
   {}
 
   /**
-   * Start the button handler.
-   */
-  void begin()
-    __attribute__((always_inline))
-  {
-    Watchdog::attach(this, SAMPLE_MS);
-  }
-
-  /**
-   * Stop the button handler.
-   */
-  void end()
-    __attribute__((always_inline))
-  {
-    detach();
-  }
-
-  /**
-   * @override Button
+   * @override{Button}
    * The button change event handler. Called when a change
    * corresponding to the mode has been detected. Event types are;
    * Event::FALLING_TYPE, Event::RISING_TYPE, and Event::CHANGE_TYPE.
@@ -115,7 +98,7 @@ protected:
   uint8_t m_state;
 
   /**
-   * @override Event::Handler
+   * @override{Event::Handler}
    * Button event handler. Called by event dispatch. Samples the
    * attached pin and calls the pin change handler, on_change().
    * @param[in] type the type of event (timeout).
@@ -137,6 +120,9 @@ protected:
     if ((old_state != new_state) &&
 	((MODE == ON_CHANGE_MODE) || (new_state == MODE)))
       on_change(Event::FALLING_TYPE + MODE);
+
+    // Put the job back into the queue
+    reschedule();
   }
 };
 

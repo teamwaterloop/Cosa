@@ -22,8 +22,8 @@
 #include "Cosa/IOStream/Driver/UART.hh"
 
 #if defined(BOARD_ATTINY)
-// Default is serial output only
-// static IOBuffer<Soft::UART::BUFFER_MAX> ibuf;
+// Default is serial output only (UAT)
+// static IOBuffer<Soft::UART::RX_BUFFER_MAX> ibuf;
 // Soft::UART  __attribute__ ((weak)) uart(Board::D2, Board::PCI1, &ibuf);
 Soft::UAT  __attribute__ ((weak)) uart(Board::D2);
 #else
@@ -35,21 +35,22 @@ Soft::UAT  __attribute__ ((weak)) uart(Board::D2);
 #undef uart
 #else
 #include "Cosa/IOBuffer.hh"
-static IOBuffer<UART::BUFFER_MAX> ibuf;
-static IOBuffer<UART::BUFFER_MAX> obuf;
+static IOBuffer<UART::RX_BUFFER_MAX> ibuf;
+static IOBuffer<UART::TX_BUFFER_MAX> obuf;
 UART __attribute__ ((weak)) uart(0, &ibuf, &obuf);
 #endif
 
-UART* UART::uart[Board::UART_MAX] = { 0 };
+UART* UART::uart[Board::UART_MAX] = { NULL };
 
 bool
 UART::begin(uint32_t baudrate, uint8_t format)
 {
-  uint16_t setting = (F_CPU / (baudrate * 8L)) - 1;
+  uint16_t setting = ((F_CPU / 4 / baudrate) - 1) / 2;
 
   // Check if double rate is not possible
   if (setting > 4095) {
-    setting = (F_CPU / (baudrate * 16L)) - 1;
+    setting = ((F_CPU / 8 / baudrate) - 1) / 2;
+    *UCSRnA() = 0;
   } else {
     *UCSRnA() = _BV(U2X0);
   }
@@ -74,11 +75,21 @@ UART::end()
 int
 UART::putchar(char c)
 {
-  // Check if the buffer is full
-  while (m_obuf->putchar(c) == IOStream::EOF) yield();
+  // Fast track when idle
+  if (((*UCSRnB() & _BV(UDRIE0)) == 0) && ((*UCSRnA() & _BV(UDRE0)) != 0)) {
+    // Put directly into the transmit buffer
+    *UDRn() = c;
 
-  // Enable the transmitter
-  *UCSRnB() |= _BV(UDRIE0);
+    // A short delay to make things even faster
+    if (*UBRRn() == 1) _delay_loop_1(27);
+  }
+  else {
+    // Check if the buffer is full
+    while (m_obuf->putchar(c) == IOStream::EOF) yield();
+
+    // Enable the transmitter
+    *UCSRnB() |= _BV(UDRIE0);
+  }
   return (c & 0xff);
 }
 
@@ -89,8 +100,8 @@ UART::flush()
   int res = m_obuf->flush();
   if (UNLIKELY(res < 0)) return (res);
 
-  // Wait for the last character to be transmitted
-  while (!(*UCSRnA() & _BV(UDRE0))) yield();
+  // Wait for all the characters to be transmitted
+  while (*UCSRnB() & _BV(TXCIE0)) yield();
   return (0);
 }
 

@@ -21,22 +21,20 @@
 #ifndef COSA_PROTO_THREAD_HH
 #define COSA_PROTO_THREAD_HH
 
+#include "Cosa/Job.hh"
 #include "Cosa/Event.hh"
-#include "Cosa/Linkage.hh"
-#include "Cosa/Watchdog.hh"
 
 /**
  * Cosa implementation of protothreads; A protothread is a
  * low-overhead mechanism for concurrent programming. Protothreads
  * function as stackless, lightweight threads providing a blocking
  * context using minimal memory per protothread. Cosa/Thread supports
- * event to thread mapping and timers. The size of Cosa/Thread is
- * 9 bytes (3 bytes for state and continuation, 4 bytes for Link and
- * 2 bytes for virtual table pointer).
+ * event to thread mapping and timers.
  *
  * @section Limitations
- * The thread macro set should only be used within the ProtoThread::run()
- * function.
+ * The thread macro set should only be used within the
+ * ProtoThread::on_run() function. The macros cannot be used in
+ * functions called from on_run().
  *
  * @section Acknowledgements
  * Inspired by research and prototype by Adam Dunkels, Oliver Schmidt,
@@ -51,7 +49,7 @@
  * library for GCC, http://code.google.com/p/protothread/<br>
  * [3] http://en.wikipedia.org/wiki/Protothreads<br>
  */
-class ProtoThread : public Link {
+class ProtoThread : public Job {
 public:
   /**
    * Thread states.
@@ -69,9 +67,10 @@ public:
   /**
    * Construct thread, initiate state and continuation. Does not
    * schedule the thread. This is done with begin().
+   * @param[in] scheduler wiht milli-seconds time unit.
    */
-  ProtoThread() :
-    Link(),
+  ProtoThread(Job::Scheduler* scheduler) :
+    Job(scheduler),
     m_state(INITIATED),
     m_ip(0)
   {}
@@ -116,7 +115,9 @@ public:
     __attribute__((always_inline))
   {
     m_state = WAITING;
-    Watchdog::attach(this, ms);
+    detach();
+    expire_after(ms);
+    start();
   }
 
   /**
@@ -139,7 +140,7 @@ public:
   }
 
   /**
-   * @override ProtoThread
+   * @override{ProtoThread}
    * Thread activity. Must be overridden. Use the thread macro set in
    * the following format:
    * {
@@ -156,7 +157,7 @@ public:
    * @param[in] type the type of event.
    * @param[in] value the event value.
    */
-  virtual void run(uint8_t type = Event::RUN_TYPE, uint16_t value = 0) = 0;
+  virtual void on_run(uint8_t type, uint16_t value) = 0;
 
   /**
    * Run threads in the run queue. If given flag is true events will
@@ -181,7 +182,7 @@ protected:
   void* m_ip;
 
   /**
-   * @override Event::Handler
+   * @override{Event::Handler}
    * The first level event handler. Filters timeout events and
    * run the thread action function.
    * @param[in] type the type of event.

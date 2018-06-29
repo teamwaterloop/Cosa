@@ -27,11 +27,14 @@
  * This file is part of the Arduino Che Cosa project.
  */
 
+#include "Cosa/Clock.hh"
 #include "Cosa/RTC.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Memory.h"
 #include "Cosa/Trace.hh"
 #include "Cosa/IOStream/Driver/UART.hh"
+
+RTC::Clock clock;
 
 void setup()
 {
@@ -54,14 +57,16 @@ void setup()
 
   // Check timer parameters
   TRACE(Watchdog::ms_per_tick());
-  TRACE(Watchdog::ticks());
   TRACE(RTC::us_per_tick());
-  TRACE(RTC::seconds());
+  TRACE(RTC::us_per_timer_cycle());
+  TRACE(RTC::micros());
+  TRACE(RTC::millis());
+  TRACE(clock.time());
 
   // Measure baseline
   MEASURE("RTC::micros(): ", 1) RTC::micros();
   MEASURE("RTC::millis(): ", 1) RTC::millis();
-  MEASURE("RTC::seconds(): ", 1) RTC::seconds();
+  MEASURE("clock.time(): ", 1) clock.time();
   MEASURE("RTC::delay(1): ", 1)  RTC::delay(1);
   MEASURE("RTC::delay(10): ", 1) RTC::delay(10);
   MEASURE("DELAY(10): ", 1) DELAY(10);
@@ -74,13 +79,14 @@ void setup()
   // Start the measurement
   TRACE(RTC::micros());
   TRACE(RTC::millis());
-  TRACE(RTC::seconds());
+  TRACE(clock.time());
   for (uint8_t i = 0; i < 5; i++) {
     Watchdog::delay(1000);
     TRACE(RTC::micros());
     TRACE(RTC::millis());
-    TRACE(RTC::seconds());
+    TRACE(clock.time());
   }
+  trace.flush();
 
   // Measure and validate micro-second level (RTC)
   err = 0;
@@ -96,8 +102,9 @@ void setup()
       err++;
     }
   }
-  TRACE(RTC::seconds());
+  TRACE(clock.time());
   INFO("DELAY(100): 100000 measurement/validation (err = %ul)", err);
+  trace.flush();
 
   // Measure and validate milli-second level (RTC)
   err = 0;
@@ -106,15 +113,16 @@ void setup()
     RTC::delay(100);
     stop = RTC::millis();
     uint32_t diff = stop - start;
-    if (diff > 115) {
+    if (diff > 105) {
       trace.printf(PSTR("%ul: start = %ul, stop = %ul, diff = %ul\n"),
 		   i, start, stop, diff);
       Watchdog::delay(128);
       err++;
     }
   }
-  TRACE(RTC::seconds());
+  TRACE(clock.time());
   INFO("RTC::delay(100): 100 measurement/validation (err = %ul)", err);
+  trace.flush();
 
   // Measure and validate milli-second level (Watchdog)
   err = 0;
@@ -123,14 +131,14 @@ void setup()
     Watchdog::delay(100);
     stop = RTC::millis();
     uint32_t diff = stop - start;
-    if (diff > 115) {
+    if (diff > 128) {
       trace.printf(PSTR("%ul: start = %ul, stop = %ul, diff = %ul\n"),
 		   i, start, stop, diff);
       Watchdog::delay(128);
       err++;
     }
   }
-  TRACE(RTC::seconds());
+  TRACE(clock.time());
   INFO("Watchdog::delay(100): 100 measurement/validation (err = %ul)", err);
 }
 

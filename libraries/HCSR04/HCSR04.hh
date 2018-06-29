@@ -24,7 +24,7 @@
 #include "Cosa/Types.h"
 #include "Cosa/InputPin.hh"
 #include "Cosa/OutputPin.hh"
-#include "Cosa/Linkage.hh"
+#include "Cosa/Periodic.hh"
 #include "Cosa/Watchdog.hh"
 
 /**
@@ -50,17 +50,17 @@
  * The driver will turn off interrupt handling during data read
  * from the device.
  */
-class HCSR04 : private Link {
+class HCSR04 : public Periodic {
 public:
   /**
    * Construct connection to a DHT11 device on given in/output-pin.
-   * @param[in] trig_pin trigger pin number.
-   * @param[in] echo_pin echo pin number.
+   * @param[in] trigger trigger pin.
+   * @param[in] echo echo pin.
    */
-  HCSR04(Board::DigitalPin trig_pin, Board::DigitalPin echo_pin) :
-    Link(),
-    m_trigPin(trig_pin),
-    m_echoPin(echo_pin),
+  HCSR04(Job::Scheduler* scheduler, Board::DigitalPin trigger, Board::DigitalPin echo) :
+    Periodic(scheduler, 250),
+    m_trigger(trigger),
+    m_echo(echo),
     m_distance(0)
   {}
 
@@ -86,14 +86,17 @@ public:
    * seconds.
    * @param[in] ms milli-second sample period.
    */
-  void periodic(uint16_t ms)
+  void schedule(uint16_t ms)
     __attribute__((always_inline))
   {
-    Watchdog::attach(this, ms);
+    stop();
+    period(ms);
+    expire_after(ms);
+    start();
   }
 
   /**
-   * @override Periodic
+   * @override{Periodic}
    * Default on change function. Override for callback when the
    * distance has changed.
    * @param[in] distance in milli-meters.
@@ -111,16 +114,16 @@ private:
   static const uint16_t COUNT_PER_DM = (555 * I_CPU) / 16;
 
   /** Trigger output pin. */
-  OutputPin m_trigPin;
+  OutputPin m_trigger;
 
   /** Echo input pin. */
-  InputPin m_echoPin;
+  InputPin m_echo;
 
   /** Latest valid distance. */
   uint16_t m_distance;
 
   /**
-   * @override Event::Handler
+   * @override{Event::Handler}
    * Default device event handler function. Attach to watchdog
    * timer queue, Watchdog::attach(), to allow perodic reading
    * and check if the distance has changed.

@@ -22,68 +22,70 @@
 #define COSA_PERIODIC_HH
 
 #include "Cosa/Types.h"
-#include "Cosa/Linkage.hh"
-#include "Cosa/Watchdog.hh"
+#include "Cosa/Job.hh"
 
 /**
- * Periodic function handler. Syntactic sugar for watchdog timeout
- * event handlers. Subclass and implement the virtual method run()
- * as the function to be executed periodically.
- *
- * @section Limitations
- * Avoid setting period to the same value in the run method as this
- * will force the function to be executed twice in the same time frame.
+ * Periodic function handler. Syntactic sugar for periodical jobs.
+ * Subclass and implement the virtual method run() as the function to
+ * be executed periodically. The scheduler defines the time base;
+ * the alarm scheduler uses seconds, the watchdog job scheduler
+ * milli-seconds and the real-time clock micro-seconds.
  *
  * @section See Also
- * For details on time period handling see Watchdog.hh. This execution
+ * For details on handling of time units see Job.hh. This execution
  * pattern is also available in the FSM (Finite State Machine) class.
  */
-class Periodic : protected Link {
+class Periodic : public Job {
 public:
   /**
-   * Construct a periodic function handler.
-   * @param[in] ms period of timeout.
+   * Construct a periodic function handled by the given scheduler and
+   * with the given period in the schedulers time base. The maximum
+   * period is UINT32_MAX; 1.2 hours with RTC::Scheduler, 49 days with
+   * Watchdog::Scheduler and 136 years with Alarm::Clock.
+   * @param[in] scheduler for the periodic job.
+   * @param[in] period of timeout.
    */
-  Periodic(uint16_t ms) : Link(), m_period(ms) {}
+  Periodic(Job::Scheduler* scheduler, uint32_t period) :
+    Job(scheduler),
+    m_period(period)
+  {}
 
   /**
    * Set timeout period.
-   * @param[in] ms period of timeout.
+   * @param[in] time period of timeout.
    */
-  void set_period(uint16_t ms)
-  {
-    m_period = ms;
-  }
-
-  /**
-   * Start the periodic function.
-   */
-  void begin()
+  void period(uint32_t time)
     __attribute__((always_inline))
   {
-    Watchdog::attach(this, m_period);
+    m_period = time;
   }
 
   /**
-   * Stop the periodic function.
+   * Get timeout period.
+   * @return period of timeout.
    */
-  void end()
+  uint32_t period() const
     __attribute__((always_inline))
   {
-    detach();
+    return (m_period);
   }
 
   /**
-   * @override Periodic
-   * The default null function.
+   * Reschedule after a new period.
    */
-  virtual void run() {}
+  void reschedule()
+  {
+    if (m_period == 0) return;
+    expire_after(m_period);
+    start();
+  }
 
-private:
+
+protected:
   /**
-   * @override Event::Handler
+   * @override{Event::Handler}
    * Periodic event handler; dispatch the run() function on
-   * timeout events.
+   * timeout events and reschedule the periodic job.
    * @param[in] type the type of event.
    * @param[in] value the event value.
    */
@@ -92,25 +94,35 @@ private:
     UNUSED(value);
     if (UNLIKELY(type != Event::TIMEOUT_TYPE)) return;
     run();
+    reschedule();
   }
 
-  uint16_t m_period;
+  /** Time period. Time unit is defined by the scheduler. */
+  uint32_t m_period;
 };
 
 /**
- * Syntactic sugar for periodic block. Used in the form:
+ * Syntactic sugar for periodic blocks in the loop() function. Used in
+ * the form:
  * @code
  * void loop()
  * {
- *   periodic(ms) {
+ *   periodic(timer,period) {
  *     ...
  *   }
+ *   ...
  * }
  * @endcode
-  */
-#define periodic(ms)							\
-  for (uint32_t start = RTC::millis(), i = 1;				\
-       i != 0;								\
-       i--, delay(ms - RTC::since(start)))
+ * May be used several times in the loop() function. The timer
+ * variable is defined and available in the loop().
+ * @param[in] timer variable.
+ * @param[in] period in milli-seconds.
+ * @note requires RTC.hh.
+ */
+#define periodic(timer,ms)						\
+  static uint32_t timer = RTC::millis();				\
+  for (int __UNIQUE(i) = 1;						\
+       (__UNIQUE(i) != 0) && ((RTC::since(timer)) >= ms);		\
+       __UNIQUE(i)--, timer += ms)
 
 #endif

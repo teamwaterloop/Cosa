@@ -101,7 +101,7 @@ public:
   class Action {
   public:
     /**
-     * @override Menu::Action
+     * @override{Menu::Action}
      * Menu action function for given menu item. Return true(1) if the
      * menu walker should render the display otherwise if the false(0).
      * @param[in] item menu item reference.
@@ -205,7 +205,7 @@ public:
    * key down events to the Menu walker. For simplicity the key
    * map for the walker and the LCD keypad are the same.
    */
-  class KeypadController : public LCDKeypad {
+  class KeypadController : public LCD::Keypad {
   public:
     Walker* m_walker;
 
@@ -214,13 +214,13 @@ public:
      * Construct keypad event adapter for menu walker.
      * @param[in] walker to control.
      */
-    KeypadController(Walker* walker) :
-      LCDKeypad(),
+    KeypadController(Walker* walker, Job::Scheduler* scheduler) :
+      LCD::Keypad(scheduler),
       m_walker(walker)
     {}
 
     /**
-     * @override Keypad
+     * @override{Keypad}
      * The menu walker key interpretor.
      * @param[in] nr key number (index in map).
      */
@@ -245,15 +245,18 @@ public:
       /**
        * Create rotary encoder push button handler for given pin.
        * @param[in] walker to control.
+       * @param[in] scheduler for button sampling.
        * @param[in] pin rotary encoder push button.
        */
-      RotaryButton(Menu::Walker* walker, Board::DigitalPin pin = Board::D2) :
-	Button(pin, Button::ON_FALLING_MODE),
+      RotaryButton(Menu::Walker* walker,
+		   Job::Scheduler* scheduler,
+		   Board::DigitalPin pin = Board::D2) :
+	Button(scheduler, pin, Button::ON_FALLING_MODE),
 	m_walker(walker)
       {}
 
       /**
-       * @override Button
+       * @override{Button}
        * The rotary encoder button generates a SELECT_KEY.
        * @param[in] type of change.
        */
@@ -274,21 +277,23 @@ public:
     /**
      * Construct rotary encoder event adapter for menu walker.
      * @param[in] walker to control.
+     * @param[in] scheduler for button sampling.
      * @param[in] clk rotary encoder clock pin (Default PCI4).
      * @param[in] dt rotary encoder data pin (Default PCI3).
      * @param[in] sw rotary encoder switch pin (Default D2).
      */
     RotaryController(Menu::Walker* walker,
+		     Job::Scheduler* scheduler,
 		     Board::InterruptPin clk = Board::PCI4,
 		     Board::InterruptPin dt = Board::PCI3,
 		     Board::DigitalPin sw = Board::D2) :
       Rotary::Encoder(clk, dt),
       m_walker(walker),
-      m_sw(walker, sw)
+      m_sw(walker, scheduler, sw)
     {}
 
     /**
-     * @override Event::Handler
+     * @override{Event::Handler}
      * Rotary change event handler. Forward change as a key; CW is mapped
      * to DOWN_KEY and CCW to UP_KEY (and reverse for RANGE).
      * @param[in] type the event type.
@@ -302,7 +307,7 @@ public:
     void begin()
     {
       PinChangeInterrupt::begin();
-      m_sw.begin();
+      m_sw.start();
     }
   };
 };

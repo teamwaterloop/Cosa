@@ -16,13 +16,15 @@
  * Lesser General Public License for more details.
  *
  * @section Description
- * Cosa demonstration of the DS1307 I2C/Two-Wire Realtime clock device.
+ * Cosa demonstration of the DS1307 I2C/Two-Wire Realtime clock
+ * device; read and write RAM, square wave signal generation, and time
+ * keeping.
  *
  * @section Circuit
  * @code
  *                       TinyRTC(DS1307)
  *                       +------------+
- *                     1-|SQ          |
+ * (D2)----------------1-|SQ          |
  *                     2-|DS        DS|-1
  * (A5/SCL)------------3-|SCL      SCL|-2
  * (A4/SDA)------------4-|SDA      SDA|-3
@@ -37,11 +39,11 @@
 
 #include <DS1307.h>
 
+#include "Cosa/InputPin.hh"
 #include "Cosa/OutputPin.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Trace.hh"
 #include "Cosa/IOStream/Driver/UART.hh"
-#include "Cosa/Memory.h"
 
 // Set the real-time clock
 // #define SET_TIME
@@ -58,38 +60,42 @@ struct latest_t {
 // Use the builtin led for a heartbeat
 OutputPin ledPin(Board::LED);
 
+// Clock pin
+#if defined(ARDUINO_PRO_MICRO)
+InputPin clkPin(Board::D0);
+#else
+InputPin clkPin(Board::D2);
+#endif
+
 void setup()
 {
   // Start trace output stream on the serial port
-  uart.begin(9600);
+  uart.begin(57600);
   trace.begin(&uart, PSTR("CosaDS1307: started"));
 
-  // Check amount of free memory
-  TRACE(free_memory());
-
-  // Start the watchdog ticks counter
+  // Start the watchdog for low power yield
   Watchdog::begin();
 
   // Read the latest set and run time
   latest_t latest;
   int count = rtc.read(&latest, sizeof(latest), DS1307::RAM_START);
-  TRACE(count);
+  ASSERT(count == sizeof(latest));
+  latest.set.to_binary();
+  latest.run.to_binary();
 
-  // Print latest set and the latest run time
-  trace.print(PSTR("set on "));
-  trace << latest.set << endl;
-  trace.print(PSTR("run on "));
-  trace << latest.run << endl;
+  // Print the latest set and run time
+  trace << PSTR("set: ") << latest.set << endl;
+  trace << PSTR("run: ") << latest.run << endl;
 
-  // Set the time. Adjust below to your current time
+  // Set the time. Adjust below to your current time (BCD)
   time_t now;
 #if defined(SET_TIME)
   now.year = 0x14;
-  now.month = 0x05;
-  now.date = 0x05;
+  now.month = 0x09;
+  now.date = 0x07;
   now.day = 0x00;
-  now.hours = 0x00;
-  now.minutes = 0x01;
+  now.hours = 0x22;
+  now.minutes = 0x52;
   now.seconds = 0x00;
   rtc.set_time(now);
   latest.set = now;
@@ -100,22 +106,36 @@ void setup()
   // Update the run time with the current time and update ram
   latest.run = now;
   count = rtc.write(&latest, sizeof(latest), DS1307::RAM_START);
-  TRACE(count);
+  ASSERT(count == sizeof(latest));
+
+  // Enable square wave generation
+  ASSERT(rtc.enable());
+
+  // Print the control register
+  DS1307::control_t control;
+  uint8_t pos = offsetof(DS1307::timekeeper_t, control);
+  count = rtc.read(&control, sizeof(control), pos);
+  ASSERT(count == sizeof(control));
+  trace << PSTR("control: ") << bin << control << endl;
+  trace.flush();
 }
 
 void loop()
 {
-  // Wait a second
-  sleep(1);
-  ledPin.toggle();
+  static int32_t cycle = 1;
+
+  // Wait for rising edge on clock pin
+  while (clkPin.is_clear()) yield();
+  ledPin.set();
 
   // Read the time from the rtc device and print
   time_t now;
-  if (rtc.get_time(now)) {
-    now.to_binary();
-    trace << now << endl;
-  }
+  ASSERT(rtc.get_time(now));
+  now.to_binary();
+  trace << cycle << ':' << now << endl;
+  cycle += 1;
 
-  // Heartbeat
-  ledPin.toggle();
+  // Wait for falling edge on clock pin
+  while (clkPin.is_set()) yield();
+  ledPin.clear();
 }

@@ -21,12 +21,21 @@
 #ifndef COSA_IOSTREAM_DRIVER_UART_HH
 #define COSA_IOSTREAM_DRIVER_UART_HH
 
-// Default buffer size
-#ifndef COSA_UART_BUFFER_MAX
+// Default reciever buffer size
+#ifndef COSA_UART_RX_BUFFER_MAX
 # if defined(BOARD_ATTINY)
-#   define COSA_UART_BUFFER_MAX 16
+#   define COSA_UART_RX_BUFFER_MAX 16
 # else
-#   define COSA_UART_BUFFER_MAX 32
+#   define COSA_UART_RX_BUFFER_MAX 32
+# endif
+#endif
+
+// Default transmitter buffer size
+#ifndef COSA_UART_TX_BUFFER_MAX
+# if defined(BOARD_ATTINY)
+#   define COSA_UART_TX_BUFFER_MAX 16
+# else
+#   define COSA_UART_TX_BUFFER_MAX 32
 # endif
 #endif
 
@@ -50,7 +59,8 @@ extern Soft::UAT uart;
 class UART : public Serial {
 public:
   /** Default buffer size for standard UART0 (at 9600 baud). */
-  static const uint16_t BUFFER_MAX = COSA_UART_BUFFER_MAX;
+  static const uint16_t RX_BUFFER_MAX = COSA_UART_RX_BUFFER_MAX;
+  static const uint16_t TX_BUFFER_MAX = COSA_UART_TX_BUFFER_MAX;
 
   /**
    * Construct serial port handler for given UART.
@@ -68,7 +78,7 @@ public:
   }
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Number of bytes available in input buffer.
    * @return bytes.
    */
@@ -78,7 +88,7 @@ public:
   }
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Number of bytes room in output buffer.
    * @return bytes.
    */
@@ -88,7 +98,7 @@ public:
   }
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Write character to serial port output buffer. Returns character
    * if successful otherwise a negative error code.
    * returns EOF(-1),
@@ -98,7 +108,7 @@ public:
   virtual int putchar(char c);
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Peek next character from serial port input buffer.
    * Returns character if successful otherwise on error or buffer empty
    * returns EOF(-1),
@@ -110,7 +120,7 @@ public:
   }
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Peek for given character from serial port input buffer.
    * @param[in] c character to peek for.
    * @return available or EOF(-1).
@@ -121,7 +131,7 @@ public:
   }
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Read character from serial port input buffer.
    * Returns character if successful otherwise on error or buffer empty
    * returns EOF(-1),
@@ -133,14 +143,14 @@ public:
   }
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Flush internal device buffers. Wait for device to become idle.
    * @return zero(0) or negative error code.
    */
   virtual int flush();
 
   /**
-   * @override IOStream::Device
+   * @override{IOStream::Device}
    * Empty internal device buffers.
    */
   virtual void empty()
@@ -149,7 +159,7 @@ public:
   }
 
   /**
-   * @override Serial
+   * @override{Serial}
    * Start UART device driver.
    * @param[in] baudrate serial bitrate (default 9600).
    * @param[in] format serial frame format (default async, 8data, 2stop bit)
@@ -159,7 +169,7 @@ public:
 		     uint8_t format = DEFAULT_FORMAT);
 
   /**
-   * @override Serial
+   * @override{Serial}
    * Stop UART device driver.
    * @return true(1) if successful otherwise false(0)
    */
@@ -238,7 +248,7 @@ protected:
   void on_tx_interrupt();
 
   /**
-   * @override UART
+   * @override{UART}
    * Transmit completed callback. This virtual member function is
    * called when the last byte in the output buffer is transmitted.
    */

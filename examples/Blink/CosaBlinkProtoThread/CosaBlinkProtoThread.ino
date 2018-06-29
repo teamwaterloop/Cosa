@@ -32,13 +32,13 @@
 
 class LED : public ProtoThread {
 public:
-  LED(Board::DigitalPin pin, uint16_t ms) :
-    ProtoThread(),
+  LED(Board::DigitalPin pin, Job::Scheduler* scheduler, uint16_t ms) :
+    ProtoThread(scheduler),
     m_pin(pin),
     m_delay(ms)
   {}
 
-  virtual void run(uint8_t type, uint16_t value)
+  virtual void on_run(uint8_t type, uint16_t value)
   {
     UNUSED(type);
     UNUSED(value);
@@ -55,11 +55,12 @@ private:
   uint16_t m_delay;
 };
 
-LED builtin(Board::LED, 512);
+Watchdog::Scheduler scheduler;
+LED builtin(Board::LED, &scheduler, 512);
 
 void setup()
 {
-  Watchdog::begin(16, Watchdog::push_timeout_events);
+  Watchdog::begin();
   builtin.begin();
 }
 

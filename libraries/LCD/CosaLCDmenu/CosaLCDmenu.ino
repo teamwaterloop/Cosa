@@ -32,6 +32,9 @@
 #include "Cosa/Event.hh"
 #include "Cosa/Watchdog.hh"
 
+#define USE_KEYPAD
+// #define USE_ROTARY_ENCODER
+
 // Select port type to use with the LCD device driver.
 // LCD and communication port
 #include <HD44780.h>
@@ -53,6 +56,9 @@ HD44780::Port4b port;
 // DFRobot_IIC_LCD_Module port;
 // #include <SainSmart_LCD2004.h>
 // SainSmart_LCD2004 port;
+// #include <MCP23008.h>
+// #include <Adafruit_I2C_LCD_Backpack.h>
+// Adafruit_I2C_LCD_Backpack port;
 
 // HD44780 based LCD with support for serial communication
 // #include <ERM1602_5.h>
@@ -172,24 +178,31 @@ MENU_END(root_menu)
 // The menu handler ----------------------------------------------------------
 // Control the menu walker with keypad (analog pin) or rotary encoder with
 // push button.
+Watchdog::Scheduler scheduler;
 Menu::Walker walker(&lcd, &root_menu);
-Menu::KeypadController keypad(&walker);
-// Menu::RotaryController rotary(&walker, Board::PCI6, Board::PCI5, Board::D3);
+
+#if defined(USE_KEYPAD)
+Menu::KeypadController controller(&walker, &scheduler);
+#endif
+
+#if defined(USE_ROTARY_ENCODER)
+Menu::RotaryController controller(&walker, &scheduler,
+				  Board::PCI6, Board::PCI5,
+				  Board::D3);
+#endif
 
 void setup()
 {
-  Watchdog::begin(16, Watchdog::push_timeout_events);
+  Watchdog::begin();
+  Watchdog::job(&scheduler);
   lcd.begin();
   lcd.puts(PSTR("CosaLCDmenu: started"));
   sleep(2);
   walker.begin();
-  keypad.begin();
-  // rotary.begin();
+  controller.start();
 }
 
 void loop()
 {
-  Event event;
-  Event::queue.await(&event);
-  event.dispatch();
+  Event::service();
 }

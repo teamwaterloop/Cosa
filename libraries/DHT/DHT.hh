@@ -33,11 +33,11 @@
  */
 class DHT : public ExternalInterrupt {
 public:
-  /** Humidity when conversion and/or communication fails */
-  static const int16_t BAD_HUMIDITY_SAMPLE = 1000;
+  /** Initial humidity; 100.0 % RH. */
+  static const int16_t INIT_HUMIDITY_SAMPLE = 1000;
 
-  /** Temperature when conversion and/or communication fails */
-  static const int16_t BAD_TEMPERATURE_SAMPLE = 850;
+  /** Initial temperature; 85 C. */
+  static const int16_t INIT_TEMPERATURE_SAMPLE = 850;
 
   /**
    * Construct DHT device connected to given pin.
@@ -50,8 +50,8 @@ public:
     m_value(0),
     m_bits(0),
     m_ix(0),
-    m_humidity(0),
-    m_temperature(0)
+    m_humidity(INIT_HUMIDITY_SAMPLE),
+    m_temperature(INIT_TEMPERATURE_SAMPLE)
   {}
 
   /**
@@ -115,14 +115,14 @@ public:
 
 protected:
   /**
-   * @override Interrupt::Handler
+   * @override{Interrupt::Handler}
    * The device driver interrupt level state machine.
    * @param[in] arg argument from interrupt service routine.
    */
   virtual void on_interrupt(uint16_t arg = 0);
 
   /**
-   * @override DHT
+   * @override{DHT}
    * Callback when data sample is completed. Called from interrupt
    * service routine. Typically used to push an event for further
    * processing. Default implementation is an empty function.
@@ -141,7 +141,7 @@ protected:
   bool is_valid();
 
   /**
-   * @override DHT
+   * @override{DHT}
    * Adjust data from the device. Communication protocol is the same
    * for the DHT device family but data representation is different,
    * i.e. data resolution and accuracy. Overridden by DHT11 and DHT22.
@@ -254,7 +254,7 @@ public:
 
 protected:
   /**
-   * @override DHT
+   * @override{DHT}
    * Adjust data from the DHT11 device; scale by 10 for uniform
    * number range as DHT22.
    */
@@ -296,7 +296,7 @@ public:
 
 protected:
   /**
-   * @override DHT
+   * @override{DHT}
    * Adjust data from the DHT22 device. Byte order and representation of
    * negative temperature values.
    */

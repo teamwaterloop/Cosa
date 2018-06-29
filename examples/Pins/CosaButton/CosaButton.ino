@@ -49,19 +49,19 @@
 #include "Cosa/IOStream/Driver/UART.hh"
 #include "Cosa/Memory.h"
 
+// Use the watchdog job scheduler
+Watchdog::Scheduler scheduler;
+
 // Use the built-in led
 OutputPin ledPin(Board::LED);
 
 // On-off button
 class OnOffButton : public Button {
-private:
-  uint8_t m_count;
 public:
   OnOffButton(Board::DigitalPin pin, Button::Mode mode) :
-    Button(pin, mode),
+    Button(&scheduler, pin, mode),
     m_count(0)
-  {
-  }
+  {}
 
   virtual void on_change(uint8_t type)
   {
@@ -75,6 +75,9 @@ public:
       INFO("%d: off", m_count);
     }
   }
+
+private:
+  uint8_t m_count;
 };
 
 OnOffButton onOff(Board::D2, Button::ON_FALLING_MODE);
@@ -91,19 +94,18 @@ void setup()
   TRACE(sizeof(OutputPin));
   TRACE(sizeof(InputPin));
   TRACE(sizeof(Link));
+  TRACE(sizeof(Job));
   TRACE(sizeof(Button));
   TRACE(sizeof(OnOffButton));
 
-  // Start the watchdog ticks and push time events
-  Watchdog::begin(16, Watchdog::push_timeout_events);
+  // Start the watchdog
+  Watchdog::begin();
 
   // Start the button handler
-  onOff.begin();
+  onOff.start();
 }
 
 void loop()
 {
-  Event event;
-  Event::queue.await(&event);
-  event.dispatch();
+  Event::service();
 }

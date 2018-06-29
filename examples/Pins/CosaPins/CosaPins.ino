@@ -117,6 +117,9 @@ void setup()
   TRACE(sizeof(PWMPin));
   TRACE(sizeof(Watchdog));
 
+  // Start the watchdog
+  Watchdog::begin();
+
   // Check interrupt pin; enable and print interrupt counter
   PinChangeInterrupt::begin();
   TRACE(int0Pin.get_counter());
@@ -127,20 +130,17 @@ void setup()
   int2Pin.enable();
   TRACE(extPin.get_counter());
   extPin.enable();
-
-  // Start the watchdog ticks counter (1 second pulse)
-  Watchdog::begin(1024, Watchdog::push_watchdog_event);
 }
+
+Watchdog::Clock clock;
 
 void loop()
 {
-  // Wait for the next event. Allow a low power sleep
-  Event event;
-  Event::queue.await(&event);
-  TRACE(event.get_type());
+  // Wait for the next seconds tick
+  clock.await();
 
   // Print the time index
-  INFO("ticks = %d", Watchdog::ticks());
+  INFO("ms = %d", Watchdog::millis());
 
   // Sample the level
   uint16_t value = levelPin.sample();
