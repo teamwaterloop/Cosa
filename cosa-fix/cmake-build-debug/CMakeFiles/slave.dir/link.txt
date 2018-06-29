@@ -1,0 +1,1 @@
+/usr/local/bin/avr-g++  -g -Os        -fno-exceptions -g            -fno-exceptions  -Wl,--gc-sections -lm -Wl,--gc-sections -lm -mmcu=atmega2560  CMakeFiles/slave.dir/src/slave/main.cpp.obj  -o slave.elf libmega2560_CORE.a -lc -lm 
