@@ -25,6 +25,7 @@
 
 #if !defined(BOARD_ATTINY)
 #include "Cosa/Interrupt.hh"
+#include "Cosa/Power.hh"
 
 /**
  * Input Capture Unit. Allows timer capture and interrupt handling on
@@ -32,8 +33,9 @@
  * on ATmega328p, D8).
  *
  * @section Limitations
- * Uses Timer#1. Cannot be used with libraries that use the same Timer;
- * Tone, VWI. Compiles for Mega but the ICP1 pin is not available.
+ * Uses Timer1. Cannot be used with libraries that use the same Timer;
+ * Tone, VWI. Compiles for Mega but the ICP1 pin is not available on
+ * the Arduino Mega board.
  */
 class InputCapture : public Interrupt::Handler {
 public:
@@ -48,6 +50,22 @@ public:
    * @param[in] mode capture mode (Default ON_FALLING_MODE).
    */
   InputCapture(InterruptMode mode = ON_FALLING_MODE);
+
+  /**
+   * Start input capture timer.
+   */
+  static void begin()
+  {
+    Power::timer1_enable();
+  }
+
+  /**
+   * Stop input capture timer.
+   */
+  static void end()
+  {
+    Power::timer1_disable();
+  }
 
   /**
    * Get current capture mode.

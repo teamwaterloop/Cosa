@@ -27,15 +27,22 @@
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Soft/UART.hh"
 
+OutputPin led(Board::LED);
 IOBuffer<Soft::UART::RX_BUFFER_MAX> ibuf;
+
 #if defined(BOARD_ATTINY)
+// Arduino Tiny: RX(D2), TX(D1)
 Soft::UART uart(Board::D2, Board::PCI1, &ibuf);
 #define BAUDRATE 38400
+#elif defined(BOARD_ATMEGA2560)
+// Arduino Mega: RX(D11), TX(D10)
+Soft::UART uart(Board::D11, Board::PCI4, &ibuf);
+#define BAUDRATE 57600
 #else
+// Arduino Standard: RX(D5), TX(D4)
 Soft::UART uart(Board::D5, Board::PCI4, &ibuf);
 #define BAUDRATE 57600
 #endif
-OutputPin led(Board::LED);
 
 void setup()
 {
@@ -46,27 +53,29 @@ void setup()
 
 void loop()
 {
-  static uint8_t ix = 0;
+  // Echo characters received on soft uart
+  uint32_t start = Watchdog::millis();
+  while (Watchdog::since(start) < 2000) {
+    while (uart.available()) uart.putchar(uart.getchar());
+   }
 
   // Write pin status to soft uart
   led.toggle();
-  uart.putchar('D');
-  if (ix < 10) {
-    uart.putchar(ix + '0');
+  uint8_t max = membersof(digital_pin_map);
+  uart.puts(PSTR("D[0.."));
+  if (max < 10) {
+    uart.putchar(max + '0');
   }
   else {
-    uart.putchar(ix/10 + '0');
-    uart.putchar(ix%10 + '0');
+    uart.putchar(max/10 + '0');
+    uart.putchar(max%10 + '0');
   }
-  Board::DigitalPin pin;
-  pin = (Board::DigitalPin) pgm_read_byte(digital_pin_map + ix);
-  if (Pin::read(pin))
-    uart.puts(PSTR(" = on\n"));
-  else uart.puts(PSTR(" = off\n"));
+  uart.puts(PSTR("]:"));
+  for (uint8_t ix = 0; ix < membersof(digital_pin_map); ix++) {
+    Board::DigitalPin pin;
+    pin = (Board::DigitalPin) pgm_read_byte(digital_pin_map + ix);
+    uart.putchar(Pin::read(pin) ? '1' : '0');
+  }
+  uart.putchar('\n');
   led.toggle();
-  if (ix == membersof(digital_pin_map)) ix = 0; else ix += 1;
-
-  // Echo characters received on soft uart
-  while (uart.available()) uart.putchar(uart.getchar());
-  sleep(1);
 }

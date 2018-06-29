@@ -262,25 +262,25 @@ public:
 
   /**
    * Pin change interrupt. Number of port registers.
-   * Arduino Mega does not allow access to all pins (PCI8..15).
+   * Arduino Mega does not allow access to all PCI pins.
    */
   enum InterruptPin {
-    PCI0 = D53,			// PB0
-    PCI1 = D52,			// PB1
-    PCI2 = D51,			// PB2
-    PCI3 = D50,			// PB3
-    PCI4 = D10,			// PB4
-    PCI5 = D11,			// PB5
-    PCI6 = D12,			// PB6
-    PCI7 = D13,			// PB7
-    PCI16 = A8,			// PK0
-    PCI17 = A9,			// PK1
-    PCI18 = A10,		// PK2
-    PCI19 = A11,		// PK3
-    PCI20 = A12,		// PK4
-    PCI21 = A13,		// PK5
-    PCI22 = A14,		// PK6
-    PCI23 = A15			// PK7
+    PCI0 = D10,			// PB4
+    PCI1 = D11,			// PB5
+    PCI2 = D12,			// PB6
+    PCI3 = D13,			// PB7
+    PCI4 = D50,			// PB3
+    PCI5 = D51,			// PB2
+    PCI6 = D52,			// PB1
+    PCI7 = D53,			// PB0
+    PCI8 = D62,			// PK0/A8
+    PCI9 = D63,			// PK1/A9
+    PCI10 = D64,		// PK2/A10
+    PCI11 = D65,		// PK3/A11
+    PCI12 = D66,		// PK4/A12
+    PCI13 = D67,		// PK5/A13
+    PCI14 = D68,		// PK6/A14
+    PCI15 = D69			// PK7/A15
   } __attribute__((packed));
 
   /**

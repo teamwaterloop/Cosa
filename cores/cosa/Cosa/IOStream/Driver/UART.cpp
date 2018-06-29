@@ -28,8 +28,7 @@
 Soft::UAT  __attribute__ ((weak)) uart(Board::D2);
 #else
 
-#include "Cosa/Bits.h"
-#include "Cosa/Power.hh"
+#include <avr/power.h>
 
 #if defined(USBCON)
 #undef uart
@@ -45,9 +44,11 @@ UART* UART::uart[Board::UART_MAX] = { NULL };
 bool
 UART::begin(uint32_t baudrate, uint8_t format)
 {
-  uint16_t setting = ((F_CPU / 4 / baudrate) - 1) / 2;
+  // Power up the device
+  powerup();
 
   // Check if double rate is not possible
+  uint16_t setting = ((F_CPU / 4 / baudrate) - 1) / 2;
   if (setting > 4095) {
     setting = ((F_CPU / 8 / baudrate) - 1) / 2;
     *UCSRnA() = 0;
@@ -67,53 +68,152 @@ UART::begin(uint32_t baudrate, uint8_t format)
 bool
 UART::end()
 {
+  // Flush an output
+  flush();
+
   // Disable receiver and transmitter interrupt
   *UCSRnB() &= ~(_BV(RXCIE0) | _BV(RXEN0) | _BV(TXEN0));
+
+  // Powerdown the device
+  powerdown();
   return (true);
 }
+
+// A fast track direct to the hardware pipeline is possible when it is
+// idle. At 500 Kbps the effective baud-rate increases from 84% to
+// 99.9%, 1 Mbps from 42% to 88%, and 2 Mbps from 21% to 88%. Does not
+// effect lower baud-rates more than the pipeline is started faster.
+#define USE_FAST_TRACK
+
+// A short delay improves synchronization with hardware pipeline at
+// 1 Mbps. The effective baud-rate increases at 1 Mbps from 88% to
+// 99.5% and at 2 Mbps from 88% to 90%. Note that the delay is tuned
+// for program memory string write (at 1 Mbps).
+#define USE_SYNC_DELAY
 
 int
 UART::putchar(char c)
 {
-  // Fast track when idle
+  // Flag that transitter is used
+  m_idle = false;
+
+#if defined(USE_FAST_TRACK)
+  // Fast track when transmitter is idle; put directly into the pipeline
   if (((*UCSRnB() & _BV(UDRIE0)) == 0) && ((*UCSRnA() & _BV(UDRE0)) != 0)) {
-    // Put directly into the transmit buffer
-    *UDRn() = c;
-
-    // A short delay to make things even faster
-    if (*UBRRn() == 1) _delay_loop_1(27);
+    synchronized {
+      *UDRn() = c;
+      *UCSRnA() |= _BV(TXC0);
+    }
+#if defined(USE_SYNC_DELAY)
+    // A short delay to make things even faster; optimized for program
+    // memory string write (approx. 5 us)
+    if (UNLIKELY(*UBRRn() == 1)) {
+      _delay_loop_1(25);
+      nop();
+      nop();
+    }
+#endif
+    return (c & 0xff);
   }
-  else {
-    // Check if the buffer is full
-    while (m_obuf->putchar(c) == IOStream::EOF) yield();
+#endif
 
-    // Enable the transmitter
-    *UCSRnB() |= _BV(UDRIE0);
-  }
+  // Check if the buffer is full
+  while (m_obuf->putchar(c) == IOStream::EOF)
+    yield();
+
+  // Enable the transmitter
+  *UCSRnB() |= _BV(UDRIE0);
   return (c & 0xff);
 }
 
 int
 UART::flush()
 {
-  // Flush the output buffer; i.e. wait for it to be emptied
-  int res = m_obuf->flush();
-  if (UNLIKELY(res < 0)) return (res);
+  // Check for idle transmitter; nothing to flush
+  if (m_idle) return (0);
 
-  // Wait for all the characters to be transmitted
-  while (*UCSRnB() & _BV(TXCIE0)) yield();
+  // Wait for transmission to complete
+  while ((*UCSRnB() & _BV(UDRIE0)) != 0)
+    yield();
+
+  // Wait for the last character to be transmitted
+  while ((*UCSRnA() & _BV(TXC0)) == 0)
+    ;
+  *UCSRnA() |= _BV(TXC0);
+
+  // Mark as idle again
+  m_idle = true;
   return (0);
+}
+
+void
+UART::powerup()
+{
+  switch (m_port) {
+#if defined(power_usart0_enable)
+  case 0:
+    power_usart0_enable();
+    break;
+#endif
+#if defined(power_usart1_enable)
+  case 1:
+    power_usart1_enable();
+    break;
+#endif
+#if defined(power_usart2_enable)
+  case 2:
+    power_usart2_enable();
+    break;
+#endif
+#if defined(power_usart3_enable)
+  case 3:
+    power_usart3_enable();
+    break;
+#endif
+  default:
+    break;
+  }
+}
+
+void
+UART::powerdown()
+{
+  switch (m_port) {
+#if defined(power_usart0_disable)
+  case 0:
+    power_usart0_disable();
+    break;
+#endif
+#if defined(power_usart1_disable)
+  case 1:
+    power_usart1_disable();
+    break;
+#endif
+#if defined(power_usart2_disable)
+  case 2:
+    power_usart2_disable();
+    break;
+#endif
+#if defined(power_usart3_disable)
+  case 3:
+    power_usart3_disable();
+    break;
+#endif
+  default:
+    break;
+  }
 }
 
 void
 UART::on_udre_interrupt()
 {
   int c = m_obuf->getchar();
-  if (c != IOStream::EOF)
+  if (c != IOStream::EOF) {
     *UDRn() = c;
+    *UCSRnA() |= _BV(TXC0);
+  }
   else {
     *UCSRnB() &= ~_BV(UDRIE0);
-    *UCSRnB() |= _BV(TXCIE0);
   }
 }
 
@@ -121,13 +221,6 @@ void
 UART::on_rx_interrupt()
 {
   m_ibuf->putchar(*UDRn());
-}
-
-void
-UART::on_tx_interrupt()
-{
-  *UCSRnB() &= ~_BV(TXCIE0);
-  on_transmit_completed();
 }
 
 #define UART_ISR(vec,nr)			\
@@ -142,12 +235,6 @@ ISR(vec ## _RX_vect)				\
   if (UNLIKELY(UART::uart[nr] == NULL)) return;	\
   UART::uart[nr]->on_rx_interrupt();		\
 }						\
-						\
-ISR(vec ## _TX_vect)				\
-{						\
-  if (UNLIKELY(UART::uart[nr] == NULL)) return;	\
-  UART::uart[nr]->on_tx_interrupt();		\
-}
 
 #if defined(USART_UDRE_vect)
 UART_ISR(USART, 0)

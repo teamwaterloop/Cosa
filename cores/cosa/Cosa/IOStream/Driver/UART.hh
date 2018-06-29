@@ -52,7 +52,7 @@ extern Soft::UAT uart;
 #include "Cosa/Board.hh"
 
 /**
- * Basic UART device handler with internal buffering. IOStream
+ * Basic UART device handler with external buffering. IOStream
  * devices may be piped with the IOBuffer class. The UART class
  * requires an input- and output IOBuffer instance.
  */
@@ -70,9 +70,11 @@ public:
    */
   UART(uint8_t port, IOStream::Device* ibuf, IOStream::Device* obuf) :
     Serial(),
+    m_port(port),
     m_sfr(Board::UART(port)),
     m_ibuf(ibuf),
-    m_obuf(obuf)
+    m_obuf(obuf),
+    m_idle(true)
   {
     uart[port] = this;
   }
@@ -100,8 +102,7 @@ public:
   /**
    * @override{IOStream::Device}
    * Write character to serial port output buffer. Returns character
-   * if successful otherwise a negative error code.
-   * returns EOF(-1),
+   * if successful otherwise a negative error code (EOF(-1)).
    * @param[in] c character to write.
    * @return character written or EOF(-1).
    */
@@ -109,9 +110,8 @@ public:
 
   /**
    * @override{IOStream::Device}
-   * Peek next character from serial port input buffer.
-   * Returns character if successful otherwise on error or buffer empty
-   * returns EOF(-1),
+   * Peek at next character from serial port input buffer. Returns
+   * character if successful otherwise a negative error code (EOF(-1)).
    * @return character or EOF(-1).
    */
   virtual int peekchar()
@@ -132,9 +132,8 @@ public:
 
   /**
    * @override{IOStream::Device}
-   * Read character from serial port input buffer.
-   * Returns character if successful otherwise on error or buffer empty
-   * returns EOF(-1),
+   * Read character from serial port input buffer. Returns character
+   * if successful otherwise a negative error code (EOF(-1)).
    * @return character or EOF(-1).
    */
   virtual int getchar()
@@ -144,14 +143,15 @@ public:
 
   /**
    * @override{IOStream::Device}
-   * Flush internal device buffers. Wait for device to become idle.
+   * Flush device output buffer and wait for device to become idle and
+   * all character transmitted.
    * @return zero(0) or negative error code.
    */
   virtual int flush();
 
   /**
    * @override{IOStream::Device}
-   * Empty internal device buffers.
+   * Empty output device buffers.
    */
   virtual void empty()
   {
@@ -160,7 +160,8 @@ public:
 
   /**
    * @override{Serial}
-   * Start UART device driver.
+   * Powerup and start UART for given baudrate and format. Returns
+   * true(1) if successful otherwise false(0).
    * @param[in] baudrate serial bitrate (default 9600).
    * @param[in] format serial frame format (default async, 8data, 2stop bit)
    * @return true(1) if successful otherwise false(0)
@@ -170,22 +171,36 @@ public:
 
   /**
    * @override{Serial}
-   * Stop UART device driver.
+   * Stop and powerdown UART device driver. Returns true(1) if
+   * successful otherwise false(0).
    * @return true(1) if successful otherwise false(0)
    */
   virtual bool end();
 
   /**
-   * Serial port references. Only uart0 is predefined (reference to global
-   * uart). Others are assuped to be allocated by applications and setup
-   * with UART_SETUP().
+   * @override{Serial}
+   * Powerup UART.
    */
-  static UART* uart[Board::UART_MAX];
+  virtual void powerup();
+
+  /**
+   * @override{Serial}
+   * Powerdown UART.
+   */
+  virtual void powerdown();
 
 protected:
-  volatile uint8_t* const m_sfr;
-  IOStream::Device* m_ibuf;
-  IOStream::Device* m_obuf;
+  uint8_t m_port;			//!< UART port index.
+  volatile uint8_t* const m_sfr;	//!< Special Function Register Pointer.
+  IOStream::Device* m_ibuf;		//!< Input Buffer/Device.
+  IOStream::Device* m_obuf;		//!< Output Buffer/Device.
+  bool m_idle;				//!< Flag idle mode.
+
+  /**
+   * Serial port references. Only uart0 is predefined (reference to global
+   * uart). Others as installed by constructor when created in application.
+   */
+  static UART* uart[Board::UART_MAX];
 
   /**
    * Return pointer to UART Control and Status Register A (UCSRnA).
@@ -233,27 +248,24 @@ protected:
   }
 
   /**
+   * @override{UART}
    * Common UART data register empty (transmit) interrupt handler.
    */
-  void on_udre_interrupt();
-
-  /**
-   * Common UART receive interrupt handler.
-   */
-  void on_rx_interrupt();
-
-  /**
-   * Common UART transmit completed interrupt handler.
-   */
-  void on_tx_interrupt();
+  virtual void on_udre_interrupt();
 
   /**
    * @override{UART}
-   * Transmit completed callback. This virtual member function is
-   * called when the last byte in the output buffer is transmitted.
+   * Common UART receive interrupt handler.
    */
-  virtual void on_transmit_completed() {}
+  virtual void on_rx_interrupt();
 
+  /**
+   * @override{UART}
+   * Common UART transmit completed interrupt handler.
+   */
+  virtual void on_tx_interrupt() {}
+
+  // Interrupt Service Routines are friends
 #if defined(USART_UDRE_vect)
   friend void USART_UDRE_vect(void);
   friend void USART_RX_vect(void);

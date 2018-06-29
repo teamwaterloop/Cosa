@@ -25,17 +25,73 @@
 
 #include "Cosa/RTC.hh"
 #include "Cosa/Watchdog.hh"
-#include "Cosa/Memory.h"
 #include "Cosa/Trace.hh"
 #include "Cosa/IOStream/Driver/UART.hh"
+#include <math.h>
 
-// Bits transmitted; 1 start bit, 8 data bits, 2 stop bits
-static const uint32_t BITS = 11;
+// This benchmark can be run with a background interrupt load. Set the
+// below symbol to enable a periodic job with the given period in
+// micro-seconds.
+// #define BACKGROUND_PULSE 150
+#define PULSE_WIDTH 50
+
+#if defined(BACKGROUND_PULSE)
+#include "Cosa/OutputPin.hh"
+#include "Cosa/Periodic.hh"
+
+// Schedule from interrupt with time or fixed period
+#define USE_ISR_TIME_PERIOD
+// #define USE_ISR_RESCHEDULE
+
+class Pulse : public Periodic {
+public:
+  Pulse(Job::Scheduler* scheduler, uint32_t delay, Board::DigitalPin pin) :
+    Periodic(scheduler, delay),
+    m_pin(pin)
+  {
+    expire_at(100000UL);
+  }
+
+#if defined(USE_ISR_TIME_PERIOD)
+  virtual void on_expired()
+  {
+    run();
+    expire_at(time() + period());
+    start();
+  }
+#elif defined(USE_ISR_RESCHEDULE)
+  virtual void on_expired()
+  {
+    run();
+    reschedule();
+  }
+#else
+#error "on_expired: not defined"
+#endif
+
+  virtual void run()
+  {
+    m_pin.toggle();
+#if defined(PULSE_WIDTH)
+    DELAY(PULSE_WIDTH);
+#endif
+    m_pin.toggle();
+  }
+
+private:
+  OutputPin m_pin;
+};
+
+// The RTC job scheduler and background pulse generator
+RTC::Scheduler scheduler;
+Pulse background(&scheduler, BACKGROUND_PULSE, Board::D7);
+#endif
 
 void setup()
 {
-  // Put baudrate setting as first line
+  // Start serial output with given baud-rate
   uart.begin(2000000);
+  // uart.begin(2000000);
   // uart.begin(1000000);
   // uart.begin(500000);
   // uart.begin(250000);
@@ -48,7 +104,13 @@ void setup()
   // uart.begin(14400);
   // uart.begin(9600);
   trace.begin(&uart, PSTR("CosaBenchmarkUART: started"));
-  TRACE(free_memory());
+
+#if defined(BACKGROUND_PULSE)
+  ASSERT(background.start());
+  trace << PSTR("Background:") << BACKGROUND_PULSE << PSTR(" us") << endl;
+#endif
+
+  // Start timers
   Watchdog::begin();
   RTC::begin();
 }
@@ -56,7 +118,7 @@ void setup()
 void loop()
 {
   // Measure time to print character, string and number
-  MEASURE("one character (new-line):", 1) trace << endl;
+  MEASURE("one character (new-line):", 1) trace << '\n' << endl;
   MEASURE("one character:", 1) trace << '1' << endl;
   MEASURE("one character string:", 1) trace << PSTR("1") << endl;
   MEASURE("integer:", 1) trace << 1 << endl;
@@ -72,15 +134,56 @@ void loop()
   MEASURE("long integer:", 1) trace << 100L << endl;
   MEASURE("floating point:", 1) trace << 100.0 << endl;
 
-  // Measure time to print max integer << endl; 8, 16 and 32 bit.
-  MEASURE("max int8_t:", 1) trace << (int8_t) 0x7f << endl;
-  MEASURE("max int16_t:", 1) trace << (int16_t) 0x7fff << endl;
-  MEASURE("max int32_t:", 1) trace << (int32_t) 0x7fffffffL << endl;
+  // Measure time to print min/max integer base(10)
+  MEASURE("zero int16_t:", 1) trace << 0 << endl;
+  MEASURE("min int16_t:", 1) trace << INT16_MIN << endl;
+  MEASURE("max int16_t:", 1) trace << INT16_MAX << endl;
+  MEASURE("max uint16_t:", 1) trace << UINT16_MAX << endl;
+  MEASURE("zero int32_t:", 1) trace << 0L << endl;
+  MEASURE("min int32_t:", 1) trace << INT32_MIN << endl;
+  MEASURE("max int32_t:", 1) trace << INT32_MAX << endl;
+  MEASURE("max uint32_t:", 1) trace << UINT32_MAX << endl;
 
-  // Measure time to print max unsigned integer << endl; 8, 16 and 32 bit.
-  MEASURE("max uint8_t:", 1) trace << (uint8_t) 0xffU << endl;
-  MEASURE("max uint16_t:", 1) trace << (uint16_t) 0xffffU << endl;
-  MEASURE("max uint32_t:", 1) trace << (uint32_t) 0xffffffffUL << endl;
+  // Measure time to print min/max integer base(2)
+  MEASURE("zero int16_t:", 1) trace << bin << 0 << endl;
+  MEASURE("min int16_t:", 1) trace << bin << INT16_MIN << endl;
+  MEASURE("max int16_t:", 1) trace << bin << INT16_MAX << endl;
+  MEASURE("max uint16_t:", 1) trace << bin << UINT16_MAX << endl;
+  MEASURE("zero int32_t:", 1) trace << bin << 0L << endl;
+  MEASURE("min int32_t:", 1) trace << bin << INT32_MIN << endl;
+  MEASURE("max int32_t:", 1) trace << bin << INT32_MAX << endl;
+  MEASURE("max uint32_t:", 1) trace << bin << UINT32_MAX << endl;
+
+  // Measure time to print min/max integer base(8)
+  MEASURE("zero int16_t:", 1) trace << oct << 0 << endl;
+  MEASURE("min int16_t:", 1) trace << oct << INT16_MIN << endl;
+  MEASURE("max int16_t:", 1) trace << oct << INT16_MAX << endl;
+  MEASURE("max uint16_t:", 1) trace << oct << UINT16_MAX << endl;
+  MEASURE("zero int32_t:", 1) trace << oct << 0L << endl;
+  MEASURE("min int32_t:", 1) trace << oct << INT32_MIN << endl;
+  MEASURE("max int32_t:", 1) trace << oct << INT32_MAX << endl;
+  MEASURE("max uint32_t:", 1) trace << oct << UINT32_MAX << endl;
+
+  // Measure time to print min/max integer base(16)
+  MEASURE("zero int16_t:", 1) trace << hex << 0 << endl;
+  MEASURE("min int16_t:", 1) trace << hex << INT16_MIN << endl;
+  MEASURE("max int16_t:", 1) trace << hex << INT16_MAX << endl;
+  MEASURE("max uint16_t:", 1) trace << hex << UINT16_MAX << endl;
+  MEASURE("zero int32_t:", 1) trace << hex << 0L << endl;
+  MEASURE("min int32_t:", 1) trace << hex << INT32_MIN << endl;
+  MEASURE("max int32_t:", 1) trace << hex << INT32_MAX << endl;
+  MEASURE("max uint32_t:", 1) trace << hex << UINT32_MAX << endl;
+
+  // Measure time to print some standar floating point numbers
+  MEASURE("floating point (zero):", 1) trace << 0.0 << endl;
+  MEASURE("floating point (nan):", 1) trace << NAN << endl;
+  MEASURE("floating point (infinity):", 1) trace << INFINITY << endl;
+  MEASURE("floating point (pi):", 1) trace << M_PI << endl;
+  MEASURE("floating point (e):", 1) trace << M_E << endl;
+  MEASURE("floating point (log2e):", 1) trace << M_LOG2E << endl;
+  MEASURE("floating point (log10e):", 1) trace << M_LOG10E << endl;
+  MEASURE("floating point (logn2):", 1) trace << M_LN2 << endl;
+  MEASURE("floating point (logn10):", 1) trace << M_LN10 << endl;
 
   // Measure time to print unsigned integer; 16 and 32 bit.
   MEASURE("uint16_t(digits=6):", 1) {
@@ -99,22 +202,30 @@ void loop()
   MEASURE("newline string(2):", 1) trace << (char*) "\n\n";
 
   // Measure time to print all characters
+  str_P s = PSTR(" !\"#$%&'()*+,-./0123456789:;<=>?@"
+		 "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+		 "abcdefghijklmnopqrstuvwxyz{|}~\r\n");
+  const uint8_t LINES = 10;
+
+  // Use 10 ms delay before and after as markers for Logic Analyzer
   delay(10);
-  uint16_t n = 0;
   MEASURE("performance:", 1) {
-    for (uint8_t i = 0; i < 10; i++) {
-      for (uint8_t c = ' '; c < ' '+95; c++, n++)
-	trace << (char) c;
-      trace << endl;
-      n += 2;
-    }
+    for (uint8_t i = 0; i < LINES; i++) trace << s;
     trace.flush();
   }
   delay(10);
-  uint32_t Kbps = (BITS * n * 1000UL) / trace.measure;
-  trace << PSTR("effective baudrate (") << n << PSTR(" characters):")
+  uint32_t BITS = 11;
+  uint16_t chars = LINES * strlen_P(s);
+  uint32_t Kbps = (BITS * chars * 1000UL) / trace.measure;
+  trace << PSTR("effective baudrate (") << chars << PSTR(" characters):")
 	<< Kbps << PSTR(" Kbps")
 	<< endl;
 
-  ASSERT(true == false);
+#if defined(BACKGROUND_PULSE)
+  uint16_t pulses = trace.measure / BACKGROUND_PULSE;
+  trace << PSTR("background pulses (") << pulses << PSTR("):")
+	<< (uint32_t) pulses * PULSE_WIDTH << PSTR(" us")
+	<< endl;
+#endif
+  sleep(1);
 }
