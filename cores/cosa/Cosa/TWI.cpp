@@ -161,9 +161,9 @@ TWI::isr_stop(State state, uint8_t type)
   // Check for asynchronous mode and call completion callback
   if (m_dev->is_async() || m_status == SR_STOP) {
     m_dev->on_completion(type, m_count);
-    m_dev = NULL;
+    // m_dev = NULL;
     m_busy = false;
-    TWCR = 0;
+    // TWCR = 0;
   }
 }
 
