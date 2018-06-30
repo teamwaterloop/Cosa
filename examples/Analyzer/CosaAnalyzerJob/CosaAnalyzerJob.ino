@@ -19,11 +19,11 @@
  * Logic Analyzer based analysis of Job chain scheduling.
  *
  * @section Circuit
- * Trigger on CHAN0/D7 rising.
+ * Trigger on CHAN0/D13 rising.
  *
  * +-------+
- * | CHAN0 |-------------------------------> D7
- * | CHAN1 |-------------------------------> D8
+ * | CHAN0 |-------------------------------> D13
+ * | CHAN1 |-------------------------------> D12
  * |       |
  * | GND   |-------------------------------> GND
  * +-------+
@@ -32,10 +32,11 @@
  */
 
 #include "Cosa/Job.hh"
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
+#include "Cosa/Power.hh"
 #include "Cosa/OutputPin.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 
 // Call directly from interrupt
 #define USE_ISR_DISPATCH
@@ -43,8 +44,8 @@
 class Work : public Job {
 public:
   Work(Job::Scheduler* scheduler,
-       Board::DigitalPin pin, uint32_t delay,
-       Work* chain) :
+       Board::DigitalPin pin,
+       uint32_t delay, Work* chain) :
     Job(scheduler),
     m_pin(pin),
     m_delay(delay),
@@ -75,8 +76,8 @@ private:
   Work* m_chain;
 };
 
-// Use the real-time clock scheduler (micro-seconds)
-RTC::Scheduler scheduler;
+// Use the real-time job scheduler (micro-seconds)
+RTT::Scheduler scheduler;
 
 // Forward declare for cyclic reference
 extern Work w0;
@@ -87,23 +88,23 @@ extern Work w4;
 
 // Periodic
 // (w0)-200ms->(w0)
-Work w0(&scheduler, Board::D7, 200000UL, &w0);
+Work w0(&scheduler, Board::D13, 200000UL, &w0);
 
 // Chain
-// (w1)-150us->(w2)-400us->(w3)-1200us->(w4)-250us->(w1)
-Work w1(&scheduler, Board::D8,    150UL, &w2);
-Work w2(&scheduler, Board::D8,    400UL, &w3);
-Work w3(&scheduler, Board::D8,   1200UL, &w4);
-Work w4(&scheduler, Board::D8,    250UL, &w1);
+// (w1)-150us->(w2)-500us->(w3)-1500us->(w4)-250us->(w1)
+Work w1(&scheduler, Board::D12, 150UL, &w2);
+Work w2(&scheduler, Board::D12, 500UL, &w3);
+Work w3(&scheduler, Board::D12, 1500UL, &w4);
+Work w4(&scheduler, Board::D12, 250UL, &w1);
 
 void setup()
 {
   // Print Info about the logic analyser probe channels
   uart.begin(9600);
   trace.begin(&uart, PSTR("CosaAnalyzerJob: started"));
-  trace << PSTR("CHAN0 - D7 [^]") << endl;
-  trace << PSTR("CHAN1 - D8") << endl;
-  trace << PSTR("RTC Job Scheduler") << endl;
+  trace << PSTR("CHAN0 - D13 [^]") << endl;
+  trace << PSTR("CHAN1 - D12") << endl;
+  trace << PSTR("RTT Job Scheduler") << endl;
 #if defined(USE_ISR_DISPATCH)
   trace << PSTR("ISR dispatch") << endl;
 #else
@@ -118,8 +119,9 @@ void setup()
   w0.start();
   w1.start();
 
-  // Start the real-time clock
-  RTC::begin();
+  // Use timer based low power sleep (9.2/3.2 mA)
+  RTT::begin();
+  Power::set(SLEEP_MODE_EXT_STANDBY);
 }
 
 void loop()

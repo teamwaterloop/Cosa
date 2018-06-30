@@ -53,7 +53,7 @@ public:
    * @param[in] initial value.
    * @note atomic
    */
-  static void set_mode(Board::DigitalPin pin, uint8_t initial = 0)
+  static void mode(Board::DigitalPin pin, uint8_t initial = 0)
   {
     volatile uint8_t* port = PORT(pin);
     volatile uint8_t* ddr = DDR(pin);
@@ -308,8 +308,14 @@ public:
   {
     volatile uint8_t* port = PORT(pin);
     const uint8_t mask = MASK(pin);
-#if ARDUINO > 150
+#if (ARDUINO > 150)
+#if defined(PORTH)
+    if (((int) port < PORTH)
+	&& __builtin_constant_p(pin)
+	&& __builtin_constant_p(value)) {
+#else
     if (__builtin_constant_p(pin) && __builtin_constant_p(value)) {
+#endif
       if (value) {
 	*port |= mask;
       }

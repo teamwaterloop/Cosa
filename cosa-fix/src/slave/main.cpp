@@ -2,7 +2,7 @@
 #include "Cosa/OutputPin.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+// #include "Cosa/IOStream/Driver/UART.hh"
 #include "Cosa/Memory.h"
 
 bool hello = false;
@@ -20,8 +20,8 @@ public:
     {
         hello = true;
 
-        set_write_buf(m_buf, sizeof(m_buf));
-        set_read_buf(m_buf, sizeof(m_buf));
+        write_buf(m_buf, sizeof(m_buf));
+        read_buf(m_buf, sizeof(m_buf));
         // write_buf(m_buf, sizeof(m_buf));
         // read_buf(m_buf, sizeof(m_buf));
     }
@@ -52,8 +52,8 @@ Echo echo;
 void setup()
 {
     // Start trace output stream on the serial port
-    uart.begin(9600);
-    trace.begin(&uart, PSTR("CosaTWISlave: started"));
+    // uart.begin(9600);
+    // trace.begin(&uart, PSTR("CosaTWISlave: started"));
 
     // Check amount of free memory and size of classes
     TRACE(free_memory());

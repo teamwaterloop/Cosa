@@ -100,7 +100,7 @@ public:
    * Return Arduino pin number of abstract pin.
    * @return pin number.
    */
-  uint8_t get_pin() const
+  uint8_t pin() const
   {
     return (m_pin);
   }
@@ -265,14 +265,6 @@ protected:
   {
     return (Board::PCIMR(m_pin));
   }
-
-  /**
-   * Print abstract pin information to given stream.
-   * @param[in] outs output stream to print on.
-   * @param[in] pin to print
-   * @return iostream.
-   */
-  friend IOStream& operator<<(IOStream& outs, Pin& pin);
 };
 
 /**

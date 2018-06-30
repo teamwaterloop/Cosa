@@ -23,10 +23,10 @@
  * This file is part of the Arduino Che Cosa project.
  */
 
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 #include <math.h>
 
 // This benchmark can be run with a background interrupt load. Set the
@@ -82,15 +82,15 @@ private:
   OutputPin m_pin;
 };
 
-// The RTC job scheduler and background pulse generator
-RTC::Scheduler scheduler;
+// The RTT job scheduler and background pulse generator
+RTT::Scheduler scheduler;
 Pulse background(&scheduler, BACKGROUND_PULSE, Board::D7);
 #endif
 
 void setup()
 {
   // Start serial output with given baud-rate
-  uart.begin(2000000);
+  uart.begin(1000000);
   // uart.begin(2000000);
   // uart.begin(1000000);
   // uart.begin(500000);
@@ -112,7 +112,7 @@ void setup()
 
   // Start timers
   Watchdog::begin();
-  RTC::begin();
+  RTT::begin();
 }
 
 void loop()
@@ -121,6 +121,8 @@ void loop()
   MEASURE("one character (new-line):", 1) trace << '\n' << endl;
   MEASURE("one character:", 1) trace << '1' << endl;
   MEASURE("one character string:", 1) trace << PSTR("1") << endl;
+  MEASURE("utf8 character string:", 1) trace << PSTR("€") << endl;
+
   MEASURE("integer:", 1) trace << 1 << endl;
   MEASURE("long integer:", 1) trace << 1L << endl;
   MEASURE("two characters:", 1) trace << '1' << '0' << endl;

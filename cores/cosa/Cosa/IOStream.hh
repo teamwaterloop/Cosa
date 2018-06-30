@@ -74,7 +74,7 @@ public:
     /**
      * Set non-blocking mode.
      */
-    void set_non_blocking()
+    void non_blocking()
     {
       m_blocking = false;
     }
@@ -82,7 +82,7 @@ public:
     /**
      * Set blocking mode.
      */
-    void set_blocking()
+    void blocking()
     {
       m_blocking = true;
     }
@@ -100,7 +100,7 @@ public:
      * Set end of line mode.
      * @param[in] mode for end of line.
      */
-    void set_eol(Mode mode)
+    void eol(Mode mode)
     {
       m_eol = mode;
     }
@@ -109,7 +109,7 @@ public:
      * Get end of line mode.
      * @return mode.
      */
-    Mode get_eol() const
+    Mode eol() const
     {
       return (m_eol);
     }
@@ -262,7 +262,7 @@ public:
    * Get current device.
    * @return device.
    */
-  Device* get_device()
+  Device* device() const
   {
     return (m_dev);
   }
@@ -272,13 +272,18 @@ public:
    * @param[in] dev stream device.
    * @return previous device.
    */
-  Device* set_device(Device* dev);
+  Device* device(Device* dev)
+  {
+    Device* previous = m_dev;
+    m_dev = dev;
+    return (previous);
+  }
 
   /**
    * Get io stream end of line string.
    * @return string for end of line.
    */
-  str_P get_eol()
+  str_P eol() const
   {
     return (m_eols);
   }
@@ -287,7 +292,7 @@ public:
    * Get io stream end of line string.
    * @return string for end of line.
    */
-  str_P EOL()
+  str_P EOL() const
   {
     return (m_eols);
   }
@@ -296,7 +301,7 @@ public:
    * Set io stream end of line string.
    * @param[in] s string for end of line.
    */
-  void set_eol(str_P s)
+  void eol(str_P s)
   {
     m_eols = s;
   }
@@ -685,6 +690,17 @@ public:
   IOStream& operator<<(IOStream& buffer)
   {
     print(&buffer);
+    return (*this);
+  }
+
+  /**
+   * Print contents of iovector to stream.
+   * @param[in] vec iovector.
+   * @return iostream.
+   */
+  IOStream& operator<<(const iovec_t* vec)
+  {
+    if (m_dev != NULL) m_dev->write(vec);
     return (*this);
   }
 

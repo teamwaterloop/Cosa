@@ -24,9 +24,9 @@
 #include <CC3000.h>
 
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 #include "Cosa/Watchdog.hh"
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 
 #if defined(WICKEDDEVICE_WILDFIRE)
 CC3000 wifi(Board::D21, Board::EXT2, Board::D23);
@@ -43,7 +43,7 @@ void setup()
   uart.begin(57600);
   trace.begin(&uart, PSTR("CosaCC3000info: started"));
   Watchdog::begin();
-  RTC::begin();
+  RTT::begin();
 
   MEASURE("Start CC3000:", 1)
     ASSERT(wifi.begin_P(PSTR("CosaCC3300info")));
@@ -72,25 +72,28 @@ void setup()
   if (wifi.wlan_ioctl_statusget() == wifi.WLAN_STATUS_DISCONNECTED) {
     MEASURE("Connect to WLAN:", 1)
       res = wifi.wlan_connect(CC3000::WPA2_SECURITY_TYPE,
-			      PSTR("SSID"),
+			      PSTR("SID"),
 			      NULL,
 			      PSTR("PASSWORD"));
     if (res < 0) TRACE(res);
-
   }
 
-  INFO("MAC and Network addresses:", 0);
   uint8_t ip[4];
   uint8_t subnet[4];
   uint8_t dns[4];
   uint8_t mac[6];
 
-  do {
-    wifi.service();
-    wifi.get_addr(ip, subnet);
-  } while (*ip == 0 && 0);
-  wifi.get_dns_addr(dns);
-  wifi.get_mac_addr(mac);
+  MEASURE("Wait for connection:", 1)
+    while (1) {
+      wifi.addr(ip, subnet);
+      if (*ip != 0) break;
+      wifi.service();
+    }
+
+  MEASURE("MAC and Network addresses:", 1) {
+    wifi.dns_addr(dns);
+    wifi.mac_addr(mac);
+  }
 
   trace << "MAC="; INET::print_mac(trace, mac); trace << endl;
   trace << "IP=";  INET::print_addr(trace, ip); trace << endl;

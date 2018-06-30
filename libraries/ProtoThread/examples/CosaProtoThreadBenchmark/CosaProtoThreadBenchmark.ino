@@ -27,10 +27,10 @@
 
 #include <ProtoThread.h>
 
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 
 // Counter thread class; two delay periods before incrementing
 // counter to show how the internal "instruction pointer" is
@@ -85,7 +85,7 @@ void setup()
 
   // Start the watchdog and rtc
   Watchdog::begin();
-  RTC::begin();
+  RTT::begin();
 
   // Start the counter threads
   cnt1.begin();

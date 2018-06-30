@@ -4,7 +4,7 @@
 # @version 1.0
 #
 # @section License
-# Copyright (C) 2014-2015, Mikael Patel
+# Copyright (C) 2014-2016, Mikael Patel
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@ shift
 if [ $# == 0 ];
 then
   # Build local CosaBuild for all board variants
-  variants=`grep build.variant ../boards.txt | cut -d. -f1 | sort`
+  variants=`grep build.variant boards.txt | cut -d. -f1 | sort`
   for board in $variants
   do
     echo `date`: $board

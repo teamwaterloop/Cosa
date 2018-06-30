@@ -5,7 +5,7 @@ Cosa is an object-oriented platform for Arduino. It replaces the Arduino
 and Wiring library with a large set of integrated classes that support
 the full range of AVR/ATmega/ATtiny internal hardware modules; all pin
 modes, Digital, and Analog Pins, External and Pin Change Interrupts,
-Analog Comparator, PWM, Watchdog, Timer0 (RTC), Timer1
+Analog Comparator, PWM, Watchdog, Timer0/Timer2 (RTT), Timer1
 (Servo/Tone/VWI), Input Capture, UART, USI, SPI, TWI and EEPROM. Cosa
 supports several programming paradigms including Multi-Tasking, Event
 Driven Programming and UML Capsules/Actors. Cosa contains over 200
@@ -32,8 +32,8 @@ Cosa API
 
 The API documentation is available:
 
-* [online](http://dl.dropbox.com/u/993383/Cosa/doc/html/index.html)
-* Compressed for [download](http://dl.dropbox.com/u/993383/Cosa/doc.zip).
+* [online](https://mikaelpatel.github.io/Cosa/index.html)
+* Compressed for [download](https://github.com/mikaelpatel/Cosa/releases)
 
 The documentation contains a full hyperlinked description of all functions
 in Cosa together with UML graphs of the class hierarchy, include dependencies,
@@ -50,31 +50,32 @@ Cosa has built-in support for a large number of boards and
 clones/vendors. It also supports breadboards and custom-design
 boards with AVR MCUs.
 
-* [AdaFruit ATmega32U4] (./cores/cosa/Cosa/Board/AdaFruit/ATmega32U4.hh)
-* [Anarduino MiniWireless] (./cores/cosa/Cosa/Board/Anarduino/MiniWireless.hh)
-* [Arduino Diecimila] (./cores/cosa/Cosa/Board/Arduino/Diecimila.hh)
-* [Arduino Duemilanove] (./cores/cosa/Cosa/Board/Arduino/Duemilanove.hh)
-* [Arduino Leonardo] (./cores/cosa/Cosa/Board/Arduino/Leonardo.hh)
-* [Arduino Mega 1280] (./cores/cosa/Cosa/Board/Arduino/Mega.hh)
-* [Arduino Mega 2560] (./cores/cosa/Cosa/Board/Arduino/Mega.hh)
-* [Arduino Micro] (./cores/cosa/Cosa/Board/Arduino/Micro.hh)
-* [Arduino Nano] (./cores/cosa/Cosa/Board/Arduino/Nano.hh)
-* [Arduino Pro Micro] (./cores/cosa/Cosa/Board/Arduino/Pro_Micro.hh)
-* [Arduino Pro Mini] (./cores/cosa/Cosa/Board/Arduino/Pro_Mini.hh)
-* [Arduino Uno] (./cores/cosa/Cosa/Board/Arduino/Uno.hh)
-* Breadboard ([ATtinyX4] (./cores/cosa/Cosa/Board/Arduino/ATtinyX4.hh), [ATtinyX5] (./cores/cosa/Cosa/Board/Arduino/ATtinyX5.hh), [ATtinyX61] (./cores/cosa/Cosa/Board/Arduino/ATtinyX61.hh), [ATmega328] (./cores/cosa/Cosa/Board/Arduino/ATmega328P.hh), [ATmega1284] (./cores/cosa/Cosa/Board/Arduino/ATmega1284P.hh))
-* [ITEAD Studio IBoard] (./cores/cosa/Cosa/Board/ITEADStudio/IBoard.hh)
-* [LilyPad Arduino] (./cores/cosa/Cosa/Board/Arduino/LilyPad.hh)
-* [LilyPad Arduino USB] (./cores/cosa/Cosa/Board/Arduino/LilyPad_USB.hh)
-* [LowPowerLab Moteino] (./cores/cosa/Cosa/Board/LowPowerLab/Moteino.hh)
-* [LowPowerLab Moteino Mega] (./cores/cosa/Cosa/Board/LowPowerLab/Moteino_Mega.hh)
-* [Pinoccio Scout] (./cores/cosa/Cosa/Board/Pinoccio/Scout.hh)
-* [Microduino-Core] (./cores/cosa/Cosa/Board/Microduino/Core.hh)
-* [Microduino-Core32u4] (./cores/cosa/Cosa/Board/Microduino/Core32U4.hh)
-* [Microduino-Core+] (./cores/cosa/Cosa/Board/Microduino/Core_Plus.hh)
-* [PJRC Teensy 2.0] (./cores/cosa/Cosa/Board/PJRC/Teensy_2_0.hh)
-* [PJRC Teensy++ 2.0] (./cores/cosa/Cosa/Board/PJRC/Teensypp_2_0.hh)
-* [Wicked Device WildFire V3] (./cores/cosa/Cosa/Board/WickedDevice/WildFire.hh)
+* [AdaFruit ATmega32U4](https://github.com/mikaelpatel/Cosa-AdaFruit/blob/master/variants/adafruit/atmega32u4/Board.hh)
+* [Anarduino MiniWireless](https://github.com/mikaelpatel/Cosa-Anarduino/blob/master/variants/anarduino/miniwireless/Board.hh)
+* [Arduino Diecimila](./cores/cosa/Cosa/Board/Arduino/Diecimila.hh)
+* [Arduino Duemilanove](./cores/cosa/Cosa/Board/Arduino/Duemilanove.hh)
+* [Arduino Leonardo](./cores/cosa/Cosa/Board/Arduino/Leonardo.hh)
+* [Arduino Mega 1280](./cores/cosa/Cosa/Board/Arduino/Mega.hh)
+* [Arduino Mega 2560](./cores/cosa/Cosa/Board/Arduino/Mega.hh)
+* [Arduino Micro](./cores/cosa/Cosa/Board/Arduino/Micro.hh)
+* [Arduino Nano](./cores/cosa/Cosa/Board/Arduino/Nano.hh)
+* [Arduino Pro Micro](./cores/cosa/Cosa/Board/Arduino/Pro_Micro.hh)
+* [Arduino Pro Mini](./cores/cosa/Cosa/Board/Arduino/Pro_Mini.hh)
+* [Arduino Uno](./cores/cosa/Cosa/Board/Arduino/Uno.hh)
+* Breadboard ([ATtinyX4](./cores/cosa/Cosa/Board/Arduino/ATtinyX4.hh), [ATtinyX5](./cores/cosa/Cosa/Board/Arduino/ATtinyX5.hh), [ATtinyX61](./cores/cosa/Cosa/Board/Arduino/ATtinyX61.hh), [ATmega328](./cores/cosa/Cosa/Board/Arduino/ATmega328P.hh), [ATmega1284](./cores/cosa/Cosa/Board/Arduino/ATmega1284P.hh))
+* [ITEAD Studio IBoard](https://github.com/mikaelpatel/Cosa-ITEADStudio/blob/master/variants/iteadstudio/iboard/Board.hh)
+* [LilyPad Arduino](./cores/cosa/Cosa/Board/Arduino/LilyPad.hh)
+* [LilyPad Arduino USB](./cores/cosa/Cosa/Board/Arduino/LilyPad_USB.hh)
+* [LowPowerLab Moteino](https://github.com/mikaelpatel/Cosa-LowPowerLab/blob/master/variants/lowpowerlab/moteino/Board.hh)
+* [LowPowerLab Moteino Mega](https://github.com/mikaelpatel/Cosa-LowPowerLab/blob/master/variants/lowpowerlab/moteino-mega/Board.hh)
+* [Pinoccio Scout](https://github.com/mikaelpatel/Cosa-Pinoccio/blob/master/variants/pinoccio/scout/Board.hh)
+* [Microduino-Core](https://github.com/mikaelpatel/Cosa-Microduino/blob/master/variants/microduino/core/Board.hh)
+* [Microduino-Core32u4](https://github.com/mikaelpatel/Cosa-Microduino/blob/master/variants/microduino/core32u4/Board.hh)
+* [Microduino-Core+](https://github.com/mikaelpatel/Cosa-Microduino/blob/master/variants/microduino/core-plus/Board.hh)
+* [PJRC Teensy 2.0](https://github.com/mikaelpatel/Cosa-PJRC/blob/master/variants/pjrc/teensy-2.0/Board.hh)
+* [PJRC Teensy++ 2.0](https://github.com/mikaelpatel/Cosa-PJRC/blob/master/variants/pjrc/teensypp-2.0/Board.hh)
+* [Wicked Device WildFire V3](https://github.com/mikaelpatel/Cosa-WickedDevice/blob/master/variants/wickeddevice/wildfire/Board.hh)
+* [Custom Boards](https://github.com/mikaelpatel/Cosa-CustomBoard)
 
 References
 ----------

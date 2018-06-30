@@ -50,11 +50,14 @@ public:
   /** Start address of clock/calender internal registers. */
   static const uint8_t RTC_START = 0;
 
+  /** Static memory size. */
+  static const size_t RAM_MAX = 31;
+
   /** Start address of static memory. */
   static const uint8_t RAM_START = 32;
 
-  /** Static memory size. */
-  static const size_t RAM_MAX = 31;
+  /** End address of static memory. */
+  static const uint8_t RAM_END = RAM_START + RAM_MAX;
 
   /**
    * Construct device driver for DS1302 Real-Time Clock with the given
@@ -91,7 +94,7 @@ public:
    * Set write protect-bit according to flag.
    * @param[in] flag write protect mode.
    */
-  void set_write_protect(bool flag)
+  void write_protect(bool flag)
     __attribute__((always_inline))
   {
     write(WP, flag ? 0x80 : 0x00);
@@ -121,7 +124,7 @@ public:
 
   /**
    * Write given data to the static memory (31 bytes). Requires
-   * handling of write protect (set_write_protect).
+   * handling of write protect (write_protect).
    * @param[in] addr memory address (0..RAM_MAX-1).
    * @param[in] data to write to the memory address.
    */
@@ -148,7 +151,7 @@ public:
    */
   void write_ram(void* buf, size_t size);
 
-private:
+protected:
   /** Write protect register. */
   static const uint8_t WP = 0x07;
 

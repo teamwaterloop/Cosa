@@ -23,7 +23,7 @@
 #if !defined(BOARD_ATTINYX5)
 
 #include "Cosa/Power.hh"
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 
 #if defined(BOARD_ATTINY)
 #define PIN PINA
@@ -210,7 +210,7 @@ CC1101::send(uint8_t dest, uint8_t port, const void* buf, size_t len)
 int
 CC1101::recv(uint8_t& src, uint8_t& port, void* buf, size_t len, uint32_t ms)
 {
-  uint32_t start = RTC::millis();
+  uint32_t start = RTT::millis();
   uint8_t size;
 
   // Put in receive mode and wait for incoming message
@@ -218,7 +218,7 @@ CC1101::recv(uint8_t& src, uint8_t& port, void* buf, size_t len, uint32_t ms)
   strobe(SRX);
   m_avail = false;
   do {
-    while (!m_avail && ((ms == 0) || (RTC::since(start) < ms))) yield();
+    while (!m_avail && ((ms == 0) || (RTT::since(start) < ms))) yield();
     if (!m_avail) {
       strobe(SIDLE);
       return (ETIME);
@@ -276,7 +276,7 @@ CC1101::wakeup_on_radio()
 }
 
 void
-CC1101::set_output_power_level(int8_t dBm)
+CC1101::output_power_level(int8_t dBm)
 {
   uint8_t pa = 0xC0;
   if      (dBm < -20) pa = 0x12;
@@ -295,7 +295,7 @@ CC1101::set_output_power_level(int8_t dBm)
 }
 
 int
-CC1101::get_input_power_level()
+CC1101::input_power_level()
 {
   int rssi = m_recv_status.rssi;
   return (((rssi < 128) ? rssi : rssi - 256) / 2 - 74);

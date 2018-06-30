@@ -44,25 +44,25 @@
  * This file is part of the Arduino Che Cosa project.
  */
 
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 
 static uint32_t idle = 0L;
 
 void iowait()
 {
-  uint32_t start = RTC::micros();
+  uint32_t start = RTT::micros();
   Power::sleep();
-  uint32_t stop = RTC::micros();
+  uint32_t stop = RTT::micros();
   idle = (start > stop) ? 0L : idle + (stop - start);
 }
 
 void setup()
 {
   // Start serial output with given baud-rate
-  uart.begin(2000000);
+  uart.begin(1000000);
   // uart.begin(2000000);
   // uart.begin(1000000);
   // uart.begin(500000);
@@ -82,7 +82,7 @@ void setup()
 
   // Start timers
   Watchdog::begin();
-  RTC::begin();
+  RTT::begin();
 }
 
 void loop()
@@ -101,7 +101,7 @@ void loop()
   trace << PSTR("effective baudrate (") << CHARS << PSTR(" characters):")
 	<< Mbps << PSTR(" Mbps")
 	<< endl;
-  trace << PSTR("idle:") << (idle * 100.0) / RTC::micros() << '%'
+  trace << PSTR("idle:") << (idle * 100.0) / RTT::micros() << '%'
 	<< endl;
   ASSERT(true == false);
 }

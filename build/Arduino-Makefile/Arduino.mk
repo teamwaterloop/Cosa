@@ -231,7 +231,7 @@
 # specify a few more variables, depending on the core in use.
 #
 # The HLT (attiny-master) core can be used just by specifying
-# ALTERNATE_CORE, assuming your core is in your ~/sketchbook/hardware
+# ALTERNATE_CORE, assuming your core is in your ~/Sketchbook/hardware
 # directory. For example:
 #
 # ISP_PORT = /dev/ttyACM0
@@ -246,16 +246,16 @@
 # ISP_PORT = /dev/ttyACM0
 # BOARD_TAG = attiny85at8
 # ALTERNATE_CORE = arduino-tiny
-# ARDUINO_VAR_PATH = ~/sketchbook/hardware/arduino-tiny/cores/tiny
-# ARDUINO_CORE_PATH = ~/sketchbook/hardware/arduino-tiny/cores/tiny
+# ARDUINO_VAR_PATH = ~/Sketchbook/hardware/arduino-tiny/cores/tiny
+# ARDUINO_CORE_PATH = ~/Sketchbook/hardware/arduino-tiny/cores/tiny
 #
 # or....
 #
 # ISP_PORT = /dev/ttyACM0
 # BOARD_TAG = attiny861at8
 # ALTERNATE_CORE = tiny2
-# ARDUINO_VAR_PATH = ~/sketchbook/hardware/tiny2/cores/tiny
-# ARDUINO_CORE_PATH = ~/sketchbook/hardware/tiny2/cores/tiny
+# ARDUINO_VAR_PATH = ~/Sketchbook/hardware/tiny2/cores/tiny
+# ARDUINO_CORE_PATH = ~/Sketchbook/hardware/tiny2/cores/tiny
 #
 ########################################################################
 
@@ -311,7 +311,7 @@ ifndef ARDUINO_DIR
     ARDUINO_DIR = $(AUTO_ARDUINO_DIR)
     $(call show_config_variable,ARDUINO_DIR,[AUTODETECTED])
   else
-    echo $(error "ARDUINO_DIR is not defined")
+#    echo $(error "ARDUINO_DIR is not defined")
   endif
 else
   $(call show_config_variable,ARDUINO_DIR,[USER])
@@ -337,7 +337,8 @@ ifndef ARDUINO_VERSION
   # Remove all the decimals, and right-pad with zeros, and finally
   # grab the first 3 bytes. Works for 1.0 and 1.0.1
   VERSION_FILE := $(ARDUINO_DIR)/lib/version.txt
-  AUTO_ARDUINO_VERSION := $(shell [ -e "$(VERSION_FILE)" ] && cat "$(VERSION_FILE)" | sed -e 's/^[0-9]://g' -e 's/[.]//g' -e 's/$$/0000/' | head -c3)
+  # AUTO_ARDUINO_VERSION := $(shell [ -e "$(VERSION_FILE)" ] && cat "$(VERSION_FILE)" | sed -e 's/^[0-9]://g' -e 's/[.]//g' -e 's/$$/0000/' | head -c3)
+  AUTO_ARDUINO_VERSION := $(shell [ -e "$(VERSION_FILE)" ] && cat "$(VERSION_FILE)" | sed -e 's/[.]//g')
   ifdef AUTO_ARDUINO_VERSION
     ARDUINO_VERSION = $(AUTO_ARDUINO_VERSION)
     $(call show_config_variable,ARDUINO_VERSION,[AUTODETECTED])
@@ -372,7 +373,7 @@ ifndef ARDUINO_SKETCHBOOK
   ifneq ($(ARDUINO_SKETCHBOOK),)
     $(call show_config_variable,ARDUINO_SKETCHBOOK,[AUTODETECTED],(from arduino preferences file))
   else
-    ARDUINO_SKETCHBOOK = $(HOME)/sketchbook
+    ARDUINO_SKETCHBOOK = $(HOME)/Sketchbook
     $(call show_config_variable,ARDUINO_SKETCHBOOK,[DEFAULT])
   endif
 else
@@ -399,7 +400,11 @@ ifndef OBJDUMP_NAME
 endif
 
 ifndef AR_NAME
-  AR_NAME = avr-ar
+  ifeq ($(shell expr $(ARDUINO_VERSION) '>' 169), 1)
+    AR_NAME = avr-gcc-ar
+  else
+    AR_NAME = avr-ar
+  endif
 endif
 
 ifndef SIZE_NAME
@@ -525,6 +530,13 @@ else
     $(call show_config_variable,BOARDS_TXT,[USER])
   endif
 
+endif
+
+# Check if boards.txt should be generated from installed cores. Assume that
+# variant files have been added (symbol links).
+BOARDS_TXT_AVAILABLE := $(call dir_if_exists,$(BOARDS_TXT))
+ifndef BOARDS_TXT_AVAILABLE
+  BOARDS_TXT_CAT := $(shell cat $(ARDUINO_SKETCHBOOK)/hardware/*/boards.txt > $(BOARDS_TXT))
 endif
 
 ########################################################################
@@ -658,8 +670,10 @@ else
 endif
 
 ifndef ARD_UTIL
-  ARD_UTIL := $(shell which ard-util 2> /dev/null)
-  ifndef ARD_UTIL
+  ARD_UTIL_ALT := $(shell which ard-util 2> /dev/null)
+  ifdef ARD_UTIL_ALT
+    ARD_UTIL = $(ARD_UTIL_ALT)
+  else
     # Same level as *.mk in bin directory when checked out from git or
     # in $PATH when packaged
     ARD_UTIL = $(ARDMK_DIR)/bin/ard-util
@@ -896,7 +910,7 @@ else
 endif
 
 # Add extra flags for higher Arduino versions
-ifeq ($(shell expr $(ARDUINO_VERSION) '<' 157), 1)
+ifeq ($(shell expr $(ARDUINO_VERSION) '<' 158), 1)
   EXTRA_CFLAGS += -Wextra
   EXTRA_LDFLAGS +=
   EXTRA_CXXFLAGS += -Wextra -std=gnu++0x -felide-constructors
@@ -1324,7 +1338,7 @@ config:
 	@$(ECHO) "Please refer to $(ARDMK_DIR)/Arduino.mk for more details.\n"
 
 boards:
-	@$(CAT) "$(BOARDS_TXT)" | grep -E "^[[:alnum:]|-]+.name" | sort -uf | sed 's/.name=/:/' | column -s: -t
+	@$(CAT) "$(BOARDS_TXT)" | grep -E ".name" | sort -uf | sed 's/.name=/:/' | column -s: -t
 
 monitor:
 	$(ARD_UTIL) --appear

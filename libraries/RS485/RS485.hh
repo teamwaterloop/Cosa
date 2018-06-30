@@ -22,7 +22,7 @@
 #define COSA_RS485_HH
 
 #if !defined(BOARD_ATTINY)
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 #include "Cosa/IOBuffer.hh"
 #include "Cosa/OutputPin.hh"
 
@@ -99,7 +99,7 @@ public:
    * Set device address.
    * @param[in] addr device address.
    */
-  void set_address(uint8_t addr = MASTER)
+  void address(uint8_t addr = MASTER)
   {
     m_addr = addr;
   }

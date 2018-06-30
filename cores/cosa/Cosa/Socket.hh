@@ -49,7 +49,9 @@ public:
     IOStream::Device(),
     m_src(),
     m_proto(0),
-    m_port(0)
+    m_port(0),
+    m_flags(0),
+    m_server(false)
   {
   }
 
@@ -57,7 +59,7 @@ public:
    * Get source machine address, network address and port.
    * @param[out] addr network address.
    */
-  void get_src(INET::addr_t& addr) const
+  void src(INET::addr_t& addr) const
   {
     addr = m_src;
   }
@@ -66,7 +68,7 @@ public:
    * Get socket protocol.
    * @return protocol.
    */
-  Protocol get_proto() const
+  Protocol proto() const
   {
     return ((Protocol) m_proto);
   }
@@ -75,9 +77,18 @@ public:
    * Get socket port.
    * @return port.
    */
-  uint16_t get_port() const
+  uint16_t port() const
   {
     return (m_port);
+  }
+
+  /**
+   * Get socket flags.
+   * @return flags.
+   */
+  uint8_t flags() const
+  {
+    return (m_flags);
   }
 
   /** Overloaded virtual member function write. */
@@ -139,10 +150,10 @@ public:
    * Initiate socket to the given protocol and possible port.
    * @param[in] proto protocol.
    * @param[in] port source port.
-   * @param[in] flag socket options.
+   * @param[in] flags socket options.
    * @return zero if successful otherwise negative error code.
    */
-  virtual int open(Protocol proto, uint16_t port, uint8_t flag) = 0;
+  virtual int open(Protocol proto, uint16_t port, uint8_t flags) = 0;
 
   /**
    * @override{Socket}
@@ -306,6 +317,12 @@ protected:
 
   /** Socket port */
   uint16_t m_port;
+
+  /** Socket flags */
+  uint8_t m_flags;
+
+  /** Socket is server (listen has been called) */
+  bool m_server;
 
   /**
    * @override{Socket}

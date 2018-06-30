@@ -30,7 +30,7 @@
 #include "Cosa/Board.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 
 // Table with valid keys (64 bit 1-Wire identity, 8 bytes per entry)
 const uint8_t KEY[] __PROGMEM = {
@@ -71,7 +71,7 @@ void loop()
   if (!dev.read_rom()) return;
 
   // Check if it is an authorized key. Turn on led for 5 seconds
-  uint8_t* rom = dev.get_rom();
+  uint8_t* rom = dev.rom();
   for (uint8_t i = 0; i < sizeof(KEY); i += OWI::ROM_MAX) {
     if (!memcmp_P(rom, &KEY[i], OWI::ROM_MAX)) {
       trace << dev << PSTR(":AUTHORIZED KEY") << endl;

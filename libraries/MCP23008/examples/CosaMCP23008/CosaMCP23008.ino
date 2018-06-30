@@ -40,10 +40,10 @@
 #include <MCP23008.h>
 
 #include "Cosa/Watchdog.hh"
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 #include "Cosa/OutputPin.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 #include "Cosa/Memory.h"
 
 // Use TWI at max frequency (800 KHz @ 16 MHz)
@@ -68,9 +68,9 @@ void setup()
   TRACE(sizeof(TWI));
   TRACE(sizeof(port));
 
-  // Start the watchdog ticks and RTC
+  // Start the watchdog ticks and RTT
   Watchdog::begin();
-  RTC::begin();
+  RTT::begin();
 
 #if defined(USE_MAX_FREQ)
   // Set max frequency
@@ -81,10 +81,10 @@ void setup()
   ASSERT(port.begin());
 
   // Define an output pin(0) for demo. All other are input default
-  ASSERT(port.set_output_pin(0));
+  ASSERT(port.output_pin(0));
 
   // Use pullup resistor on pin(1..7)
-  ASSERT(port.set_pullup(0xfe));
+  ASSERT(port.pullup(0xfe));
 }
 
 void loop()

@@ -2,7 +2,7 @@
 # @version 1.0
 #
 # @section License
-# Copyright (C) 2014-2015, Mikael Patel
+# Copyright (C) 2014-2017, Mikael Patel
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@ ifdef GCC_AVR_VER
   ARDUINO_VER = $(GCC_AVR_VER)
 else
   ifndef ARDUINO_VER
-    ARDUINO_VER = 1.6.5-r5
+    ARDUINO_VER = 1.8.4
   endif
   ifndef ARDUINO_DIR
     ARDUINO_DIR = $(HOME)/opt/arduino-$(ARDUINO_VER)
@@ -32,7 +32,7 @@ ARDMK_DIR = $(COSA_DIR)/build/Arduino-Makefile
 ARDUINO_CORE_PATH = $(COSA_DIR)/cores/cosa
 ARDUINO_VAR_PATH = $(COSA_DIR)/variants
 ARDUINO_LIB_PATH = $(COSA_DIR)/libraries
-BOARDS_TXT = $(COSA_DIR)/boards.txt
+BOARDS_TXT = $(COSA_DIR)/build/boards.txt
 
 MONITOR_CMD = $(COSA_DIR)/build/miniterm.py -q --lf
 

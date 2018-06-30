@@ -3,7 +3,7 @@
  * @version 1.0
  *
  * @section License
- * Copyright (C) 2015, Mikael Patel
+ * Copyright (C) 2015-2016, Mikael Patel
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,7 +46,7 @@ public:
    * @param[in] value initial value of port.
    * @note atomic
    */
-  GPIO(Board::DigitalPin pin, Mode mode, bool value = 0) :
+  GPIO(Board::DigitalPin pin, Mode mode = INPUT_MODE, bool value = 0) :
     m_sfr(Board::SFR(pin)),
     m_mask(MASK(pin))
   {
@@ -71,7 +71,7 @@ public:
    * @param mode input or output mode.
    * @note atomic
    */
-  void set_mode(Mode mode) const
+  void mode(Mode mode) const
     __attribute__((always_inline))
   {
     synchronized {
@@ -89,7 +89,7 @@ public:
    * Get pin input/output mode.
    * @return mode.
    */
-  Mode get_mode() const
+  Mode mode() const
     __attribute__((always_inline))
   {
     if ((*DDR() & m_mask) != 0)
@@ -163,7 +163,7 @@ public:
    * @param mode input or output mode.
    * @note atomic
    */
-  static void set_mode(Board::DigitalPin pin, Mode mode)
+  static void mode(Board::DigitalPin pin, Mode mode)
     __attribute__((always_inline))
   {
     const uint8_t mask = MASK(pin);
@@ -182,7 +182,7 @@ public:
    * Get pin input/output mode. Does not require an instance.
    * @return mode.
    */
-  static Mode get_mode(Board::DigitalPin pin)
+  static Mode mode(Board::DigitalPin pin)
     __attribute__((always_inline))
   {
     const uint8_t mask = MASK(pin);
@@ -217,9 +217,15 @@ public:
   {
     volatile uint8_t* port = PORT(pin);
     const uint8_t mask = MASK(pin);
-#if ARDUINO > 150
-    // Synchronized not needed when constant values
+#if (ARDUINO > 150)
+    // Synchronized not needed when constant values (and lower ports)
+#if defined(PORTH)
+    if (((int) port < PORTH)
+	&& __builtin_constant_p(pin)
+	&& __builtin_constant_p(value)) {
+#else
     if (__builtin_constant_p(pin) && __builtin_constant_p(value)) {
+#endif
       if (value) {
 	*port |= mask;
       }
@@ -250,8 +256,20 @@ public:
   {
     volatile uint8_t* port = PIN(pin);
     const uint8_t mask = MASK(pin);
-    *port = mask;
-  }
+#if (ARDUINO > 150)
+    // Synchronized not needed when constant values (and lower ports)
+#if defined(PORTH)
+    if (((int) port < PORTH) && __builtin_constant_p(pin))
+#else
+    if (__builtin_constant_p(pin))
+#endif
+      *port = mask;
+    else
+#endif
+      synchronized {
+	*port = mask;
+      }
+    }
 
 protected:
   /** Special function register pointer. */

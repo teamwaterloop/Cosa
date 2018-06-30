@@ -31,9 +31,9 @@
 #define COSA_H
 
 /**
- * Software disable low voltage detect. Powersaving is 23 uA at 5 V.
+ * Enable low voltage detect.
  * In file: main.cpp
- * #define COSA_BOD_DISABLE
+ * #define COSA_BROWN_OUT_DETECT
  */
 
 /**
@@ -44,7 +44,7 @@
 
 /**
  * UART buffer size. Default is 32 characters (16 ATTINY).
- * In file: Cosa/IOStream/Driver/UART.hh
+ * In file: Cosa/UART.hh
  * #define COSA_UART_RX_BUFFER_MAX 32
  * #define COSA_UART_TX_BUFFER_MAX 32
  */

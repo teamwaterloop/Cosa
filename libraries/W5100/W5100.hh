@@ -32,13 +32,13 @@
  * of the Cosa Socket and Cosa IOStream::Device classes. A socket may
  * be bound directly to a Cosa IOStream. The device internal
  * transmitter buffer is used. The buffer is sent on flush (TCP/UDP)
- * or when full (TCP). Integrated with Cosa INET/DHCP so that the ethernet
- * controller may obtain a network address and information from a DHCP
- * server.
+ * or when full (TCP). Integrated with Cosa INET/DHCP so that the
+ * ethernet controller may obtain a network address and information
+ * from a DHCP server.
  *
  * @section Circuit
  * @code
- *                           W5100
+ *                    W5100/Ethernet Shield
  *                       +------------+
  * (D10)--------------29-|CSN         |
  * (D11)--------------28-|MOSI        |
@@ -49,15 +49,89 @@
  * @endcode
  *
  * @section References
- * 1. W5100 Datasheet Version 1.2.4, Sep. 20, 2011,
- * http://www.wiznet.co.kr/UpLoad_Files/ReferenceFiles/W5100_Datasheet_v1.2.4.pdf
- * 2. W3150A+/W5100 Errata Sheet 2.4, Oct. 28, 2013,
- * http://www.wiznet.co.kr/Admin_Root/UpLoad_Files/BoardFiles/3150Aplus_5100_errata_en_v2.4.pdf
+ * 1. W5100 Datasheet Version 1.2.7, July 19, 2016,
+ * http://www.wiznet.co.kr/wp-content/uploads/wiznethome/Chip/W5100/Document/W5100_Datasheet_v1.2.7.pdf
+ * 2. W3150A+/W5100 Errata Sheet 2.6, October 5, 2015,
+ * http://www.wiznet.co.kr/wp-content/uploads/wiznethome/Chip/W5100/Document/3150Aplus_5100_ES_V260E.pdf
  */
 class W5100 : private SPI::Driver {
 public:
   /**
-   * Common Registers (chap. 3.1, pp. 14), big-endian 16-bit values.
+   * Construct W5100 device driver with given hardware address, and
+   * chip select.
+   * @param[in] mac hardware address (in program memory, default NULL).
+   * @param[in] csn chip selection pin (Default D10).
+   */
+  W5100(const uint8_t* mac = NULL, Board::DigitalPin csn = Board::D10);
+
+  /**
+   * Get the current network address and subnet mask.
+   * @param[in] ip network address.
+   * @param[in] subnet mask.
+   */
+  void addr(uint8_t ip[4], uint8_t subnet[4]);
+
+  /**
+   * Get DNS network address if W5100 device driver was initiated with
+   * hostname and obtained network address from DHCP.
+   * @param[in,out] ip network address.
+   */
+  void dns_addr(uint8_t ip[4]) { memcpy(ip, m_dns, sizeof(m_dns)); }
+
+  /**
+   * Initiate W5100 device driver with given hostname. Network address,
+   * subnet mask and gateway should be obtained from DHCP. Returns true
+   * if successful otherwise false.
+   * @param[in] hostname string in program memory.
+   * @param[in] timeout retry timeout period (Default 500 ms).
+   * @return bool.
+   */
+  bool begin_P(const char* hostname, uint16_t timeout = 500);
+  bool begin_P(str_P hostname, uint16_t timeout = 500)
+  {
+    return (begin_P((const char*) hostname, timeout));
+  }
+
+  /**
+   * Initiate W5100 device driver with given network address and subnet
+   * mask. Returns true if successful otherwise false.
+   * @param[in] ip network address (Default NULL, 0.0.0.0).
+   * @param[in] subnet mask (Default NULL, 0.0.0.0).
+   * @param[in] timeout retry timeout period (Default 500 ms).
+   * @return bool.
+   */
+  bool begin(uint8_t ip[4] = NULL, uint8_t subnet[4] = NULL,
+	     uint16_t timeout = 500);
+
+  /**
+   * Bind to the given network address and subnet mask. Returns zero
+   * if successful otherwise negative error code.
+   * @param[in] ip network address.
+   * @param[in] subnet mask.
+   * @param[in] gateway network address (Default NULL).
+   * @return zero if successful otherwise negative error code.
+   */
+  int bind(uint8_t ip[4], uint8_t subnet[4], uint8_t gateway[4] = NULL);
+
+  /**
+   * Allocate socket with the given protocol, port and flags. Returns
+   * pointer to socket. The socket is deallocated with Socket::close().
+   * @param[in] proto socket protocol.
+   * @param[in] port number (Default 0).
+   * @param[in] flag (Default 0).
+   * @return socket pointer or NULL.
+   */
+  Socket* socket(Socket::Protocol proto, uint16_t port = 0, uint8_t flag = 0);
+
+  /**
+   * Terminate W5100 device driver. Closes all active sockets. Return
+   * true if successful otherwise false.
+   */
+  bool end();
+
+protected:
+  /**
+   * Common Registers (chap. 3.1, pp. 15), big-endian 16-bit values.
    */
   struct CommonRegister {
     uint8_t MR;			//!< Mode Register.
@@ -81,7 +155,7 @@ public:
   };
 
   /**
-   * Mode Register bitfields, pp. 19.
+   * Mode Register bitfields, pp. 20.
    */
   enum {
     MR_RST = 0x80,		//!< S/W Reset.
@@ -92,33 +166,33 @@ public:
   } __attribute__((packed));
 
   /**
-   * Interrupt Register bitfields, pp. 21.
+   * Interrupt Register bitfields, pp. 22.
    */
   enum {
     IR_CONFLICT = 0x80,		//!< IP Conflict.
     IR_UNREACH = 0x40,		//!< Destination unreachable.
     IR_PPPoE = 0x20,		//!< PPPoE Connection Close.
-    IR_S3_INT = 0x08,		//!< Occurrence of Socket 3 Socket Interrupt.
-    IR_S2_INT = 0x04,		//!< Occurrence of Socket 2 Socket Interrupt.
-    IR_S1_INT = 0x02,		//!< Occurrence of Socket 1 Socket Interrupt.
-    IR_S0_INT = 0x01		//!< Occurrence of Socket 0 Socket Interrupt.
+    IR_S3_INT = 0x08,		//!< Occurrence of Socket 3 Interrupt.
+    IR_S2_INT = 0x04,		//!< Occurrence of Socket 2 Interrupt.
+    IR_S1_INT = 0x02,		//!< Occurrence of Socket 1 Interrupt.
+    IR_S0_INT = 0x01		//!< Occurrence of Socket 0 Interrupt.
   } __attribute__((packed));
 
   /**
-   * Interrupt Mask Register bitfields, pp. 22.
+   * Interrupt Mask Register bitfields, pp. 23.
    */
   enum {
     IMR_CONFLICT = 0x80,    	//!< Mask IP Conflict.
     IMR_UNREACH = 0x40,		//!< Mask Destination unreachable.
     IMR_PPPoE = 0x20,		//!< Mask PPPoE Connection Close.
-    IMR_S3_INT = 0x08,		//!< Mask occurrence of Socket 3 Socket Interrupt.
-    IMR_S2_INT = 0x04,		//!< Mask occurrence of Socket 2 Socket Interrupt.
-    IMR_S1_INT = 0x02,		//!< Mask occurrence of Socket 1 Socket Interrupt.
-    IMR_S0_INT = 0x01		//!< Mask occurrence of Socket 0 Socket Interrupt.
+    IMR_S3_INT = 0x08,		//!< Mask occurrence of Socket 3 Interrupt.
+    IMR_S2_INT = 0x04,		//!< Mask occurrence of Socket 2 Interrupt.
+    IMR_S1_INT = 0x02,		//!< Mask occurrence of Socket 1 Interrupt.
+    IMR_S0_INT = 0x01		//!< Mask occurrence of Socket 0 Interrupt.
   } __attribute__((packed));
 
   /**
-   * RX Memory Size Register value, pp. 23.
+   * RX Memory Size Register value, pp. 24.
    */
   enum {
     RMSR_S3_POS = 6,		//!< Socket 3 memory size position.
@@ -132,7 +206,7 @@ public:
   static const uint16_t COMMON_REGISTER_SIZE = sizeof(CommonRegister);
 
   /**
-   * Socket Registers (chap. 3.2, pp. 15).
+   * Socket Registers (chap. 3.2, pp. 16).
    */
   struct SocketRegister {
     uint8_t MR;			//!< Mode Register.
@@ -158,7 +232,7 @@ public:
   };
 
   /**
-   * Socket Mode Register bitfields, pp. 25.
+   * Socket Mode Register bitfields, pp. 26.
    */
   enum {
     MR_FLAG_MASK = 0xe0,	//!< Flag mask.
@@ -176,7 +250,7 @@ public:
   } __attribute__((packed));
 
   /**
-   * Socket Command Register values, pp. 26-26.
+   * Socket Command Register values, pp. 27-28.
    */
   enum {
     CR_OPEN = 0x01,		//!< Initiate socket according to MR.
@@ -191,7 +265,7 @@ public:
   } __attribute__((packed));
 
   /**
-   * Socket Interrupt Register bitfields, pp. 27.
+   * Socket Interrupt Register bitfields, pp. 28-29.
    */
   enum {
     IR_SEND_OK = 0x10,		//!< Send operation is completed.
@@ -202,7 +276,7 @@ public:
   } __attribute__((packed));
 
   /**
-   * Socket Status Register values, pp. 27.
+   * Socket Status Register values, pp. 29-31.
    */
   enum {
     SR_CLOSED = 0x00,
@@ -250,64 +324,13 @@ public:
   /** Maximum number of DNS request retries. */
   static const uint8_t DNS_RETRY_MAX = 4;
 
+public:
   /**
    * W5100 Single-Chip Internet-enable 10/100 Ethernet Controller Driver.
    * Implements the Cosa/Socket interface.
    */
   class Driver : public Socket {
     friend class W5100;
-  protected:
-    /**
-     * Read data from the socket receiver buffer to the given buffer
-     * with the given maximum size.
-     * @param[in] buf pointer to buffer for data.
-     * @param[in] len maximum number of bytes in buffer.
-     * @return number of bytes read if successful otherwise negative
-     * error code.
-     */
-    int dev_read(void* buf, size_t len);
-
-    /**
-     * Write data to the socket transmitter buffer from the given buffer
-     * with the given number of bytes.
-     * @param[in] buf pointer to buffer with data.
-     * @param[in] len number of bytes in buffer.
-     * @param[in] progmem program memory pointer flag.
-     * @return number of bytes written if successful otherwise negative
-     * error code.
-     */
-    int dev_write(const void* buf, size_t len, bool progmem);
-
-    /**
-     * Flush any waiting data in the socket receiver buffer.
-     */
-    void dev_flush();
-
-    /**
-     * Wait for given maximum message size in internal transmit buffer.
-     * Setup transmitter offset and initiate length for new message
-     * construction.
-     */
-    void dev_setup();
-
-    /** Pointer to socket registers; symbolic address calculation. */
-    SocketRegister* m_sreg;
-
-    /** Pointer to device context. */
-    W5100* m_dev;
-
-    /** Pointer to socket transmitter buffer. */
-    uint16_t m_tx_buf;
-
-    /** Offset in socket transmitter buffer. */
-    uint16_t m_tx_offset;
-
-    /** Length of message in socket transmitter buffer. */
-    uint16_t m_tx_len;
-
-    /** Pointer to socket receiver buffer. */
-    uint16_t m_rx_buf;
-
   public:
     /** Default constructor. */
     Driver() : Socket() {}
@@ -470,6 +493,57 @@ public:
 		     uint8_t src[4], uint16_t& port);
 
   protected:
+    /** Pointer to socket registers; symbolic address calculation. */
+    SocketRegister* m_sreg;
+
+    /** Pointer to device context. */
+    W5100* m_dev;
+
+    /** Pointer to socket transmitter buffer. */
+    uint16_t m_tx_buf;
+
+    /** Offset in socket transmitter buffer. */
+    uint16_t m_tx_offset;
+
+    /** Length of message in socket transmitter buffer. */
+    uint16_t m_tx_len;
+
+    /** Pointer to socket receiver buffer. */
+    uint16_t m_rx_buf;
+
+    /**
+     * Read data from the socket receiver buffer to the given buffer
+     * with the given maximum size.
+     * @param[in] buf pointer to buffer for data.
+     * @param[in] len maximum number of bytes in buffer.
+     * @return number of bytes read if successful otherwise negative
+     * error code.
+     */
+    int dev_read(void* buf, size_t len);
+
+    /**
+     * Write data to the socket transmitter buffer from the given buffer
+     * with the given number of bytes.
+     * @param[in] buf pointer to buffer with data.
+     * @param[in] len number of bytes in buffer.
+     * @param[in] progmem program memory pointer flag.
+     * @return number of bytes written if successful otherwise negative
+     * error code.
+     */
+    int dev_write(const void* buf, size_t len, bool progmem);
+
+    /**
+     * Flush any waiting data in the socket receiver buffer.
+     */
+    void dev_flush();
+
+    /**
+     * Wait for given maximum message size in internal transmit buffer.
+     * Setup transmitter offset and initiate length for new message
+     * construction.
+     */
+    void dev_setup();
+
     /**
      * @override{Socket}
      * Write data from buffer with given size to device. Boolean flag
@@ -518,6 +592,7 @@ public:
   /** Default hardware network address. */
   static const uint8_t MAC[6] PROGMEM;
 
+protected:
   /** Sockets on device. */
   Driver m_sock[SOCK_MAX];
 
@@ -592,80 +667,6 @@ public:
    * @param[in] cmd command to issue.
    */
   void issue(uint16_t addr, uint8_t cmd);
-
-public:
-  /**
-   * Construct W5100 device driver with given hardware address, and chip
-   * select.
-   * @param[in] mac hardware address (in program memory, default NULL).
-   * @param[in] csn chip selection pin (Default D10).
-   */
-  W5100(const uint8_t* mac = NULL, Board::DigitalPin csn = Board::D10);
-
-  /**
-   * Get the current network address and subnet mask.
-   * @param[in] ip network address.
-   * @param[in] subnet mask.
-   */
-  void get_addr(uint8_t ip[4], uint8_t subnet[4]);
-
-  /**
-   * Get DNS network address if W5100 device driver was initiated with
-   * hostname and obtained network address from DHCP.
-   * @param[in,out] ip network address.
-   */
-  void get_dns_addr(uint8_t ip[4]) { memcpy(ip, m_dns, sizeof(m_dns)); }
-
-  /**
-   * Initiate W5100 device driver with given hostname. Network address,
-   * subnet mask and gateway should be obtained from DHCP. Returns true
-   * if successful otherwise false.
-   * @param[in] hostname string in program memory.
-   * @param[in] timeout retry timeout period (Default 500 ms).
-   * @return bool.
-   */
-  bool begin_P(const char* hostname, uint16_t timeout = 500);
-  bool begin_P(str_P hostname, uint16_t timeout = 500)
-  {
-    return (begin_P((const char*) hostname, timeout));
-  }
-
-  /**
-   * Initiate W5100 device driver with given network address and subnet
-   * mask. Returns true if successful otherwise false.
-   * @param[in] ip network address (Default NULL, 0.0.0.0).
-   * @param[in] subnet mask (Default NULL, 0.0.0.0).
-   * @param[in] timeout retry timeout period (Default 500 ms).
-   * @return bool.
-   */
-  bool begin(uint8_t ip[4] = NULL, uint8_t subnet[4] = NULL,
-	     uint16_t timeout = 500);
-
-  /**
-   * Bind to the given network address and subnet mask. Returns zero
-   * if successful otherwise negative error code.
-   * @param[in] ip network address.
-   * @param[in] subnet mask.
-   * @param[in] gateway network address (Default NULL).
-   * @return zero if successful otherwise negative error code.
-   */
-  int bind(uint8_t ip[4], uint8_t subnet[4], uint8_t gateway[4] = NULL);
-
-  /**
-   * Allocate socket with the given protocol, port and flags. Returns
-   * pointer to socket. The socket is deallocated with Socket::close().
-   * @param[in] proto socket protocol.
-   * @param[in] port number (Default 0).
-   * @param[in] flag.
-   * @return socket pointer or NULL.
-   */
-  Socket* socket(Socket::Protocol proto, uint16_t port = 0, uint8_t flag = 0);
-
-  /**
-   * Terminate W5100 device driver. Closes all active sockets. Return
-   * true if successful otherwise false.
-   */
-  bool end();
 };
 
 #endif

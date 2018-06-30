@@ -24,9 +24,9 @@
 #include <CC3000.h>
 
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 #include "Cosa/Watchdog.hh"
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 
 #if defined(WICKEDDEVICE_WILDFIRE)
 CC3000 wifi(Board::D21, Board::EXT2, Board::D23);
@@ -41,7 +41,7 @@ void setup()
   uart.begin(57600);
   trace.begin(&uart, PSTR("CosaCC3000socket: started"));
   Watchdog::begin();
-  RTC::begin();
+  RTT::begin();
   wifi.begin_P(PSTR("CosaCC3300socket"));
 }
 

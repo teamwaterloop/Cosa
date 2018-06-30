@@ -48,7 +48,7 @@
 
 #include <IR.h>
 
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Trace.hh"
 
@@ -60,7 +60,7 @@
  * Use UART or LCD/PCD8544 for output.
  */
 #if defined(USE_UART)
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 #include "Cosa/Memory.h"
 #else
 #include <Canvas.h>
@@ -136,8 +136,8 @@ void setup()
   trace.begin(&lcd, PSTR("\fOFF"));
 #endif
 
-  // Use the real-time clock for time measurement
-  RTC::begin();
+  // Use the real-time timer for time measurement
+  RTT::begin();
 
   // Use the watchdog
   Watchdog::begin();
@@ -151,12 +151,12 @@ void loop()
   // Wait for an event from the IR receiver
   Event event;
   Event::queue.await(&event);
-  uint8_t type = event.get_type();
+  uint8_t type = event.type();
 
   // Check if a new reading from the IR receiver was completed
   if (type == Event::READ_COMPLETED_TYPE) {
     static uint8_t is_on = 0;
-    uint16_t code = event.get_value();
+    uint16_t code = event.value();
     char key = receiver.lookup(code);
     trace << receiver;
     // Check special keys; first on/off

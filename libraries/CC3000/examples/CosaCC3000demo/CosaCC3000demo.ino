@@ -24,12 +24,12 @@
 #include <CC3000.h>
 
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 #include "Cosa/Watchdog.hh"
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 
 // Enable printout of data received
-// #define TRACE_RECV
+#define TRACE_RECV
 
 #if defined(WICKEDDEVICE_WILDFIRE)
 CC3000 wifi(Board::D21, Board::EXT2, Board::D23);
@@ -48,7 +48,7 @@ void setup()
   uart.begin(57600);
   trace.begin(&uart, PSTR("CosaCC3000demo: started"));
   Watchdog::begin();
-  RTC::begin();
+  RTT::begin();
   ASSERT(wifi.begin_P(PSTR("CosaCC3300demo")));
 }
 

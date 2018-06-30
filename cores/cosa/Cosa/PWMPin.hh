@@ -36,6 +36,11 @@ public:
   PWMPin(Board::PWMPin pin, uint8_t duty = 0);
 
   /**
+   * Start pwm pin. Power up timer.
+   */
+  void begin();
+
+  /**
    * Set duty cycle for pwm output pin.
    * @param[in] duty cycle (0..255)
    */
@@ -56,7 +61,7 @@ public:
    * @param[in] duty cycle (0..255)
    * @return pwm pin.
    */
-  PWMPin& operator<<(uint8_t duty)
+  PWMPin& operator=(uint8_t duty)
     __attribute__((always_inline))
   {
     set(duty);
@@ -91,7 +96,7 @@ public:
    * Return duty setting for pwm output pin.
    * @return duty
    */
-  uint8_t get_duty();
+  uint8_t duty();
 };
 
 #endif

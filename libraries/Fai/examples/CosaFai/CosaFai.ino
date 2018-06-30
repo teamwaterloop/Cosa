@@ -40,7 +40,7 @@
 #include "Cosa/AnalogPin.hh"
 #include "Cosa/IOStream.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 #include "Cosa/Event.hh"
 #include "Cosa/Watchdog.hh"
 
@@ -107,7 +107,7 @@ void loop()
   Event event(Event::TIMEOUT_TYPE);
   cout.write(&levelPin);
   cout.write(&onoffPin);
-  cout.write(1 << onoffPin.get_pin());
+  cout.write(1 << onoffPin.pin());
   cout.write(&event);
 
   ledPin.toggle();

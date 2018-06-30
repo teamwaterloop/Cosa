@@ -28,7 +28,7 @@
  * Abstract job class for handling of scheduled functions. The time
  * scale depends on the queue handler (scheduler). There are three
  * levels of queues predefined. The time resolutions are; seconds
- * (Clock), milli-seconds (Watchdog) and micro-seconds (RTC).
+ * (Clock), milli-seconds (Watchdog) and micro-seconds (RTT).
  */
 class Job : public Link {
 public:
@@ -149,7 +149,7 @@ public:
   bool is_started() const
     __attribute__((always_inline))
   {
-    return (get_pred() != this);
+    return (pred() != this);
   }
 
   /**

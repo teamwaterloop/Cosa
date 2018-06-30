@@ -23,7 +23,8 @@
  *
  * +-------+
  * | CHAN0 |-------------------------------> D13/LED
- * | CHAN1 |-------------------------------> D1/TX
+ * | ..... |
+ * | CHAN7 |-------------------------------> D1/TX
  * |       |
  * | GND   |-------------------------------> GND
  * +-------+
@@ -31,10 +32,10 @@
  * This file is part of the Arduino Che Cosa project.
  */
 
+#include "Cosa/RTT.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/Watchdog.hh"
 #include "Cosa/OutputPin.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 
 OutputPin led(Board::LED);
 
@@ -44,32 +45,38 @@ void setup()
   uart.begin(9600);
   trace.begin(&uart, PSTR("CosaAnalyzerFlush: started"));
   trace << PSTR("CHAN0 - D13/LED [^]") << endl;
-  trace << PSTR("CHAN1 - D1/TX [Async Serial]") << endl;
+  trace << PSTR("CHAN7 - D1/TX [Async Serial]") << endl;
   trace.flush();
 
-  // Use the watchdog for delay
-  Watchdog::begin();
+  // Use the RTT for delay
+  RTT::begin();
 }
 
 void loop()
 {
+  // Toggle led for baseline
+  RTT::await();
+  led.on();
+  led.off();
+
   // Write to output buffer
+  RTT::await();
   led.on();
   trace << PSTR("hello ");
   led.off();
-  delay(1);
 
-  // Write again to output buffer
+  // Write again to output buffer and wait for completion
+  RTT::await();
   led.on();
-  trace << PSTR("world") << endl;
-  led.off();
-  delay(1);
-
-  // Wait for the transmission to complete
-  led.on();
+  trace << PSTR("world");
   trace.flush();
   led.off();
+  trace << endl;
+  trace.flush();
+  led.on();
+  led.off();
 
+  // Take a nap
   sleep(2);
 }
 

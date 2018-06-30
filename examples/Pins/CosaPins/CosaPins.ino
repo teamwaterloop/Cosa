@@ -30,7 +30,7 @@
 #include "Cosa/ExternalInterrupt.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 #include "Cosa/Memory.h"
 
 // Counter Class
@@ -130,6 +130,9 @@ void setup()
   int2Pin.enable();
   TRACE(extPin.get_counter());
   extPin.enable();
+
+  // Power up ADC
+  AnalogPin::powerup();
 }
 
 Watchdog::Clock clock;
@@ -140,7 +143,7 @@ void loop()
   clock.await();
 
   // Print the time index
-  INFO("ms = %d", Watchdog::millis());
+  INFO("ms = %ul", Watchdog::millis());
 
   // Sample the level
   uint16_t value = levelPin.sample();
@@ -149,7 +152,7 @@ void loop()
   // Check if the led should be on and the pwm level updated
   if (onoffPin.is_set()) {
     ledPin.set(value, 0, 1023);
-    INFO("duty = %d", ledPin.get_duty());
+    INFO("duty = %d", ledPin.duty());
 
     // Print the interrupt counters
     TRACE(extPin.get_counter());

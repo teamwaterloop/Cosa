@@ -20,10 +20,13 @@
  * for servo.
  *
  * @section Circuit
- * Trigger on CHAN0/D7 rising.
+ * Trigger on CHAN0/D13 rising.
  *
  * +-------+
- * | CHAN0 |-------------------------------> D7
+ * | CHAN0 |-------------------------------> D13
+ * | CHAN1 |-------------------------------> D12
+ * | ..... |
+ * | CHAN7 |-------------------------------> D0/TX
  * |       |
  * | GND   |-------------------------------> GND
  * +-------+
@@ -33,11 +36,11 @@
 
 #include "Cosa/Job.hh"
 #include "Cosa/Periodic.hh"
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 #include "Cosa/OutputPin.hh"
 #include "Cosa/AnalogPin.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 
 // Call directly from interrupt service routine
 #define USE_ISR_DISPATCH
@@ -134,11 +137,11 @@ private:
 };
 
 // The job schedulers; micro-seconds and seconds level
-RTC::Scheduler scheduler;
-RTC::Clock clock;
+RTT::Scheduler scheduler;
+RTT::Clock clock;
 
 // Servo and Controller
-Servo s1(&scheduler, Board::D7);
+Servo s1(&scheduler, Board::D12);
 Controller c1(&clock, &s1, 9);
 
 void setup()
@@ -146,9 +149,9 @@ void setup()
   // Print Info about the logic analyser probe channels
   uart.begin(9600);
   trace.begin(&uart, PSTR("CosaAnalyzerServo: started"));
-  trace << PSTR("CHAN0 - D7 (") << s1.pulse() << PSTR(" us)") << endl;
-  trace << PSTR("CHAN1 - D13 (") << c1.period() << PSTR(" s)") << endl;
-  trace << PSTR("RTC Job Scheduler and Clock") << endl;
+  trace << PSTR("CHAN0 - D13 (") << c1.period() << PSTR(" s)") << endl;
+  trace << PSTR("CHAN1 - D12 (") << s1.pulse() << PSTR(" us)") << endl;
+  trace << PSTR("RTT Job Scheduler and Clock") << endl;
 #if defined(USE_ISR_DISPATCH)
   trace << PSTR("Servo ISR dispatch") << endl;
 #else
@@ -168,7 +171,7 @@ void setup()
   c1.start();
 
   // Start the timer
-  RTC::begin();
+  RTT::begin();
 }
 
 void loop()

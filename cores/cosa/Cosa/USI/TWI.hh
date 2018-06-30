@@ -120,7 +120,7 @@ public:
      * @param[in] buf buffer pointer.
      * @param[in] size of buffer.
      */
-    void set_read_buf(void* buf, size_t size);
+    void read_buf(void* buf, size_t size);
 
     /**
      * Set write (argument) buffer. Must be called before starting
@@ -128,7 +128,7 @@ public:
      * @param[in] buf buffer pointer.
      * @param[in] size of buffer.
      */
-    void set_write_buf(void* buf, size_t size);
+    void write_buf(void* buf, size_t size);
 
     /**
      * Start the slave device.
@@ -185,13 +185,13 @@ public:
    * Start TWI logic for a device transaction block.
    * @param[in] dev device.
    */
-  void begin(TWI::Driver* dev);
+  void acquire(TWI::Driver* dev);
 
   /**
    * Stop usage of the TWI bus logic.
    * @return true(1) if successful otherwise false(0).
    */
-  void end();
+  void release();
 
   /**
    * Write data to the current driver. Returns number of bytes written
@@ -332,7 +332,7 @@ private:
    * Get current driver state.
    * @return state
    */
-  State get_state() const
+  State state() const
   {
     return (m_state);
   }
@@ -341,7 +341,7 @@ private:
    * Set driver state.
    * @param[in] state.
    */
-  void set_state(State state)
+  void state(State state)
   {
     m_state = state;
   }
@@ -350,9 +350,9 @@ private:
    * Set data (SDA) pin input/output mode.
    * @param[in] mode.
    */
-  void set_mode(IOPin::Mode mode)
+  void mode(IOPin::Mode mode)
   {
-    m_sda.set_mode(mode);
+    m_sda.mode(mode);
     if (mode == IOPin::INPUT_MODE) m_sda.set();
   }
 
@@ -360,7 +360,7 @@ private:
    * Set read/write buffer (WRITE(0), READ(1)).
    * @param[in] ix buffer index.
    */
-  void set_buf(uint8_t ix)
+  void buf(uint8_t ix)
   {
     if (ix > VEC_MAX) return;
     m_next = (uint8_t*) m_vec[ix].buf;

@@ -23,7 +23,7 @@
 #if !defined(BOARD_ATTINYX5)
 
 #include "Cosa/Power.hh"
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 
 // Device configuration support macros
 #define REG_VALUE8(reg,value) (reg), (uint8_t) (value)
@@ -224,8 +224,8 @@ RFM69::recv(uint8_t& src, uint8_t& port, void* buf, size_t len, uint32_t ms)
 {
   // Set receive mode and wait for a message
   set(RECEIVER_MODE);
-  uint32_t start = RTC::millis();
-  while (!m_avail && ((ms == 0) || (RTC::since(start) < ms))) yield();
+  uint32_t start = RTT::millis();
+  while (!m_avail && ((ms == 0) || (RTT::since(start) < ms))) yield();
 
   // Set standby and check if a message was received
   set(STANDBY_MODE);
@@ -268,7 +268,7 @@ RFM69::wakeup_on_radio()
 }
 
 void
-RFM69::set_output_power_level(int8_t dBm)
+RFM69::output_power_level(int8_t dBm)
 {
   // Fix: High power level setting for RFM69HW
   if (dBm < -18) dBm = -18; else if (dBm > 13) dBm = 13;
@@ -278,13 +278,13 @@ RFM69::set_output_power_level(int8_t dBm)
 }
 
 int
-RFM69::get_input_power_level()
+RFM69::input_power_level()
 {
   return ((-read(RSSI_VALUE)) >> 1);
 }
 
 int
-RFM69::get_temperature()
+RFM69::temperature()
 {
   set(STANDBY_MODE);
   write(TEMP1, TEMP_MEAS_START);

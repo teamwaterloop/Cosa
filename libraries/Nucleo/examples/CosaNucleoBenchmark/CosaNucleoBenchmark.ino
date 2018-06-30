@@ -30,10 +30,10 @@
 
 #include <Nucleo.h>
 
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 #include "Cosa/Trace.hh"
 #include "Cosa/Watchdog.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 
 Nucleo::Semaphore sem(0);
 uint16_t count = 0;
@@ -88,7 +88,7 @@ void setup()
 
   // Start timers
   Watchdog::begin();
-  RTC::begin();
+  RTT::begin();
 
   // Start threads
   Nucleo::Thread::begin(&consumer, 64);

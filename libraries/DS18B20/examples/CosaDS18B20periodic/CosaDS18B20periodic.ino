@@ -45,7 +45,7 @@
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Periodic.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 
 // One-wire pin
 OWI owi(Board::D4);
@@ -68,7 +68,7 @@ public:
   /**
    * Return current state.
    */
-  uint8_t get_state()
+  uint8_t state()
   {
     return (m_state);
   }

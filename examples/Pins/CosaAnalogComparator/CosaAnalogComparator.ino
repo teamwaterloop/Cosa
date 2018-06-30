@@ -22,17 +22,18 @@
  */
 
 #include "Cosa/AnalogComparator.hh"
+#include "Cosa/AnalogPin.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Event.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 
 IOStream& operator<<(IOStream& outs, Event& event)
 {
   outs << Watchdog::millis() << PSTR(":Event(")
-       << event.get_type() << ','
-       << event.get_target() << ','
-       << event.get_value() << ')';
+       << event.type() << ','
+       << event.target() << ','
+       << event.value() << ')';
   return (outs);
 }
 
@@ -50,6 +51,7 @@ void setup()
   uart.begin(9600);
   trace.begin(&uart, PSTR("CosaAnalogComparator: started"));
   Watchdog::begin();
+  AnalogPin::powerup();
   detector.enable();
 }
 

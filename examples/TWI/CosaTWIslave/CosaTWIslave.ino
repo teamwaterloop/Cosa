@@ -29,7 +29,7 @@
 #include "Cosa/OutputPin.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 #include "Cosa/Memory.h"
 
 // A simple TWI slave device
@@ -43,8 +43,8 @@ public:
   // Construct the echo slave device
   Echo() : TWI::Slave(0x5A)
   {
-    set_write_buf(m_buf, sizeof(m_buf));
-    set_read_buf(m_buf, sizeof(m_buf));
+    write_buf(m_buf, sizeof(m_buf));
+    read_buf(m_buf, sizeof(m_buf));
   }
 
   // Request handler; events from incoming requests

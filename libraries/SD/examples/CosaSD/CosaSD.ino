@@ -33,16 +33,17 @@
 
 #include <SD.h>
 
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/Memory.h"
 
 // Uncomment/comment to enable/disable trace output to TFT/Canvas/Textbox
-//#define USE_SD_ADAPTER
+// #define USE_SD_ADAPTER
+#define USE_SD_DATA_LOGGING_SHIELD
 //#define USE_ETHERNET_SHIELD
-#define USE_TFT_ST7735
+//#define USE_TFT_ST7735
 
 #if defined (USE_TFT_ST7735)
 #include <Canvas.h>
@@ -57,15 +58,17 @@ Textbox textbox(&tft);
 static const uint8_t WIDTH = 6;
 #else
 static const uint8_t WIDTH = 32;
-#endif
 
 #if defined(USE_ETHERNET_SHIELD)
 SD sd(Board::D4);
 OutputPin eth(Board::D10, 1);
-#endif
 
-#if defined(WICKEDDEVICE_WILDFIRE) || defined(USE_SD_ADAPTER)
+#elif defined(WICKEDDEVICE_WILDFIRE) || defined(USE_SD_ADAPTER)
 SD sd;
+
+#elif defined(USE_SD_DATA_LOGGING_SHIELD)
+SD sd(Board::D10);
+#endif
 #endif
 
 void setup()
@@ -84,7 +87,7 @@ void setup()
 #endif
 
   Watchdog::begin();
-  RTC::begin();
+  RTT::begin();
   trace.begin(dev, PSTR("CosaSD: started"));
   TRACE(free_memory());
   TRACE(sizeof(SD));
@@ -99,7 +102,7 @@ void loop()
 
   INFO("Connect to card and switch to a higher clock frequency", 0);
   ASSERT(sd.begin(SPI::DIV2_CLOCK));
-  ASSERT(sd.get_type());
+  ASSERT(sd.type());
 
   INFO("Read CID and print fields", 0);
   ASSERT(sd.read(cid));

@@ -25,7 +25,7 @@
 
 #include "Cosa/Board.hh"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 
 // One-wire pin
 #if !defined(BOARD_ATTINY)
@@ -48,7 +48,7 @@ void setup()
     last = dev.search_rom(last);
     if (last == OWI::Driver::ERROR) break;
     trace << PSTR("static const uint8_t dev") << nr++ << PSTR("[] = {\n  ");
-    uint8_t* rom = dev.get_rom();
+    uint8_t* rom = dev.rom();
     trace << hex << rom[0];
     for (uint8_t i = 1; i < OWI::ROM_MAX; i++) {
       trace << PSTR(", ");

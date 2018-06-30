@@ -33,9 +33,9 @@
 #include "Cosa/OutputPin.hh"
 #include "Cosa/Memory.h"
 #include "Cosa/Trace.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 #include "Cosa/Watchdog.hh"
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 
 #include <DHT.h>
 
@@ -69,7 +69,7 @@ void setup()
 
   // Start the watchdog ticks and sensor monitoring
   Watchdog::begin();
-  RTC::begin();
+  RTT::begin();
 }
 
 void loop()

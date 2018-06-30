@@ -52,7 +52,7 @@ public:
   bool end()
     __attribute__((always_inline))
   {
-    set_device(NULL);
+    device(NULL);
     return (true);
   }
 
@@ -60,7 +60,7 @@ public:
    * Set exit character to signal fatal to serial monitor.
    * @param[in] c new exit character.
    */
-  void set_exitcharacter(char c)
+  void exitcharacter(char c)
   {
     EXITCHARACTER = c;
   }
@@ -217,26 +217,49 @@ extern uint8_t trace_log_mask;
 # if defined(TRACE_NO_VERBOSE) || defined(BOARD_ATTINY)
 # define MEASURE(msg,cnt)						\
   trace.flush();							\
-  for (uint32_t __stop, __start = RTC::micros(), __i = 1;		\
+  for (uint32_t __stop, __start = RTT::micros(), __i = 1;		\
        __i != 0;							\
        __i--,								\
-       __stop = RTC::micros(),						\
+       __stop = RTT::micros(),						\
        trace.measure = (__stop - __start) / cnt,			\
        trace << PSTR(msg) << trace.measure,				\
        trace << PSTR(" us") << endl,					\
        trace.flush())							\
     for (uint16_t __j = cnt; __j != 0; __j--)
+# define measure(msg,cnt)						\
+  trace.flush();							\
+  for (uint32_t __stop, __start = RTT::millis(), __i = 1;		\
+       __i != 0;							\
+       __i--,								\
+       __stop = RTT::millis(),						\
+       trace.measure = (__stop - __start) / cnt,			\
+       trace << PSTR(msg) << trace.measure,				\
+       trace << PSTR(" ms") << endl,					\
+       trace.flush())							\
+    for (uint16_t __j = cnt; __j != 0; __j--)
 #else
 # define MEASURE(msg,cnt)						\
   trace.flush();							\
-  for (uint32_t __stop, __start = RTC::micros(), __i = 1;		\
+  for (uint32_t __stop, __start = RTT::micros(), __i = 1;		\
        __i != 0;							\
        __i--,								\
-       __stop = RTC::micros(),						\
+       __stop = RTT::micros(),						\
        trace.measure = (__stop - __start) / cnt,			\
        trace << __LINE__ << ':' << __PRETTY_FUNCTION__,			\
        trace << PSTR(":measure:") << PSTR(msg) << trace.measure,	\
        trace << PSTR(" us") << endl,					\
+       trace.flush())							\
+    for (uint16_t __j = cnt; __j != 0; __j--)
+# define measure(msg,cnt)						\
+  trace.flush();							\
+  for (uint32_t __stop, __start = RTT::millis(), __i = 1;		\
+       __i != 0;							\
+       __i--,								\
+       __stop = RTT::millis(),						\
+       trace.measure = (__stop - __start) / cnt,			\
+       trace << __LINE__ << ':' << __PRETTY_FUNCTION__,			\
+       trace << PSTR(":measure:") << PSTR(msg) << trace.measure,	\
+       trace << PSTR(" ms") << endl,					\
        trace.flush())							\
     for (uint16_t __j = cnt; __j != 0; __j--)
 #endif

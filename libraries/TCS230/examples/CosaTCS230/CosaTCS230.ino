@@ -35,9 +35,9 @@
 
 #include <TCS230.h>
 
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 #include "Cosa/Watchdog.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 #include "Cosa/Trace.hh"
 
 TCS230 sensor;
@@ -47,22 +47,22 @@ void setup()
   uart.begin(9600);
   trace.begin(&uart, PSTR("CosaTCS230: started"));
   Watchdog::begin();
-  RTC::begin();
-  sensor.set_frequency_scaling(100);
+  RTT::begin();
+  sensor.frequency_scaling(100);
 }
 
 void loop()
 {
-  sensor.set_photodiode(TCS230::NO_FILTER);
+  sensor.photodiode(TCS230::NO_FILTER);
   uint16_t clear = sensor.sample();
 
-  sensor.set_photodiode(TCS230::RED_FILTER);
+  sensor.photodiode(TCS230::RED_FILTER);
   uint16_t red = sensor.sample();
 
-  sensor.set_photodiode(TCS230::GREEN_FILTER);
+  sensor.photodiode(TCS230::GREEN_FILTER);
   uint16_t green = sensor.sample();
 
-  sensor.set_photodiode(TCS230::BLUE_FILTER);
+  sensor.photodiode(TCS230::BLUE_FILTER);
   uint16_t blue = sensor.sample();
 
   trace << clear << ':' << red << ',' << green << ',' << blue;

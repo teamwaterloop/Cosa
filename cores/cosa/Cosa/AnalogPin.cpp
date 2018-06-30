@@ -23,8 +23,8 @@
 bool
 AnalogPin::sample_request(Board::AnalogPin pin, uint8_t ref)
 {
-  if (UNLIKELY(sampling_pin != NULL)) return (false);
   loop_until_bit_is_clear(ADCSRA, ADSC);
+  if (UNLIKELY(sampling_pin != NULL)) return (false);
   sampling_pin = this;
   ADMUX = (ref | (pin & 0x1f));
 #if defined(MUX5)
@@ -78,4 +78,3 @@ ISR(ADC_vect)
   if (UNLIKELY(AnalogPin::sampling_pin == NULL)) return;
   AnalogPin::sampling_pin->on_interrupt(ADCW);
 }
-

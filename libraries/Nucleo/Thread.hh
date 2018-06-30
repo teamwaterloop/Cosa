@@ -36,7 +36,7 @@ public:
    * Return running thread.
    * @return thread.
    */
-  static Thread* get_running()
+  static Thread* running()
   {
     return (s_running);
   }
@@ -75,7 +75,7 @@ public:
   void yield()
     __attribute__((always_inline))
   {
-    Thread* thread = (Thread*) get_succ();
+    Thread* thread = (Thread*) succ();
     if (thread == this) thread = &s_main;
     resume(thread);
   }

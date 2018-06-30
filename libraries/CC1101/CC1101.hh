@@ -177,26 +177,26 @@ public:
    * Set output power level (-30..10 dBm)
    * @param[in] dBm.
    */
-  virtual void set_output_power_level(int8_t dBm);
+  virtual void output_power_level(int8_t dBm);
 
   /**
    * @override{Wireless::Driver}
    * Return estimated input power level (dBm) from latest successful
    * message received.
    */
-  virtual int get_input_power_level();
+  virtual int input_power_level();
 
   /**
    * @override{Wireless::Driver}
    * Return link quality indicator from latest successful receive
    * message. Lower level is better quality.
    */
-  virtual int get_link_quality_indicator()
+  virtual int link_quality_indicator()
   {
     return (m_recv_status.lqi);
   }
 
-private:
+protected:
   /**
    * Transaction header (pp. 29). Note 16-bit configuration variables are
    * read/written in big endian order (MSB first) and require swapping.
@@ -235,7 +235,7 @@ private:
 
   /**
    * Read single register value and status. Access status with
-   * get_status(). Returns register value.
+   * status(). Returns register value.
    * @param[in] reg register address.
    * @return value.
    */
@@ -248,7 +248,7 @@ private:
 
   /**
    * Read multiple register values into given buffer. Access status
-   * with get_status().
+   * with status().
    * @param[in] reg start register address.
    * @param[in] buf buffer to store register values.
    * @param[in] count size of buffer and number of registers to read.
@@ -260,7 +260,7 @@ private:
   }
 
   /**
-   * Write single register value. Access status with get_status().
+   * Write single register value. Access status with status().
    * @param[in] reg register address.
    * @param[in] value to write to register.
    */
@@ -272,7 +272,7 @@ private:
 
   /**
    * Write multiple register values from given buffer. Access status
-   * with get_status().
+   * with status().
    * @param[in] reg start register address.
    * @param[in] buf buffer with new register values.
    * @param[in] count size of buffer and number of registers to read.
@@ -285,7 +285,7 @@ private:
 
   /**
    * Write multiple register values from given buffer in program memory.
-   * Access status with get_status().
+   * Access status with status().
    * @param[in] reg start register address.
    * @param[in] buf buffer in program memory with new register values.
    * @param[in] count size of buffer (and number of registers) to write
@@ -566,7 +566,7 @@ private:
    * Get latest transaction status.
    * @return status
    */
-  status_t get_status() const
+  status_t status() const
   {
     return (m_status);
   }

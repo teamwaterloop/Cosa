@@ -38,11 +38,11 @@
 #include <Touch.h>
 
 #include "Cosa/Types.h"
-#include "Cosa/RTC.hh"
+#include "Cosa/RTT.hh"
 #include "Cosa/Event.hh"
 #include "Cosa/Watchdog.hh"
 #include "Cosa/IOStream.hh"
-#include "Cosa/IOStream/Driver/UART.hh"
+#include "Cosa/UART.hh"
 
 IOStream cout(&uart);
 
@@ -53,12 +53,12 @@ public:
     m_offset(offset)
   {}
 
-  static void set_value(int16_t value)
+  static void value(int16_t value)
   {
     s_value = value;
   }
 
-  static int16_t get_value()
+  static int16_t value()
   {
     return (s_value);
   }
@@ -85,8 +85,8 @@ void setup()
   uart.begin(9600);
   cout << PSTR("CosaTouch: started") << endl;
   Watchdog::begin();
-  RTC::begin();
-  Key::set_value(0);
+  RTT::begin();
+  Key::value(0);
   upkey.start();
   downkey.start();
 }
