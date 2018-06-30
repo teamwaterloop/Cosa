@@ -1,1 +1,0 @@
-/usr/local/bin/avr-g++  -g -Os        -fno-exceptions -g            -fno-exceptions  -Wl,--gc-sections -lm -Wl,--gc-sections -lm -mmcu=atmega328p  CMakeFiles/main.dir/src/main.cpp.obj  -o main.elf libuno_CORE.a -lc -lm 
