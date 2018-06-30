@@ -295,6 +295,8 @@ ISR(TWI_vect)
 void
 TWI::Slave::begin()
 {
+  power_twi_enable();
+
   twi.m_dev = this;
   synchronized {
     TWAR = m_addr;
