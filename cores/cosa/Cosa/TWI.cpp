@@ -292,9 +292,7 @@ void
 TWI::Slave::begin()
 {
   power_twi_enable();
-
   twi.m_dev = this;
-
   synchronized {
     TWAR = m_addr;
     bit_mask_clear(TWSR, _BV(TWPS0) | _BV(TWPS1));
